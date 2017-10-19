@@ -27,8 +27,6 @@ class IsingLattice:
 
     def _hamiltonian(self):
         """Calculate lattice hamiltonian"""
-        i = 0
-        j = 0
         for i in range(self.n):
             for j in range(self.n):
                 # Walk through lattice; avoid double counting by only going right and down.
