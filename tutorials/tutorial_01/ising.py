@@ -15,6 +15,7 @@ class IsingLattice:
         self.energy = 0
 
         self._init_lattice()
+        self._hamiltonian()
 
     def _init_lattice(self):
 
@@ -24,22 +25,35 @@ class IsingLattice:
         else:
             self.lattice = np.random.choice(self.spins, size=(self.n, self.n))
 
-    def hamiltonian(self):
-
+    def _hamiltonian(self):
+        """Calculate lattice hamiltonian"""
+        i = 0
+        j = 0
         for i in range(self.n):
             for j in range(self.n):
+                # Walk through lattice; avoid double counting by only going right and down.
+                # Nearest neighbour of border (i = self.n) is i=0.
+                # FIXME: This might still be incorrect
+                self.energy += self.lattice[i][j]*(self.lattice[(i+1) % self.n][j] + self.lattice[(i-1) % self.n][j])
 
-                self.energy += self.lattice[i][j]*(self.lattice[i % self.n - 1][j] + self.lattice[i][j % self.n - 1])
+        # Multiply by self.j
+        self.energy *= -self.j
+
+    def rand_lattice(self):
+        """Creates new random lattice"""
+        self.lattice = np.random.choice(self.spins, size=(self.n, self.n))
 
     def get_lattice(self):
+        """Return lattice"""
         return self.lattice
 
     def show_lattice(self):
-        print self.lattice
-        #plt.imshow(self.lattice)
+        """Show lattice config using matplotlib"""
+        plt.imshow(self.lattice, interpolation='none', cmap='gray')
+        plt.colorbar()
+        plt.title('Configuration of %i x %i Ising lattice' % (self.n, self.n))
+        plt.show()
 
-
-i_0 = IsingLattice(3)
-
-i_0.show_lattice()
-i_0.hamiltonian()
+ising = IsingLattice(10)
+print ising.energy
+ising.show_lattice()
