@@ -1,0 +1,6 @@
+# PyCharm
+.idea/
+# Logs
+*.log
+# Python
+*.pyc
