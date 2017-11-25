@@ -8,6 +8,14 @@ from numba import njit, jit
 import itertools
 
 
+########################################################################################################################
+#
+# Ising model with brute force approach
+#
+########################################################################################################################
+
+
+
 def rand_lattice(lx, ly, sp):
     """
     Return a lattice of dimensions lx * ly with random spin entries from sp
@@ -46,6 +54,18 @@ def l_hamiltonian(l, j):
     return j * e
 
 
+def energy_roll(l, j):
+    """
+    Calculates the energy on a lattice
+    :param np.array lattice: numpy array with spins
+    :returns np.array: energies on the lattice points
+    """
+
+    d = len(l.shape)
+
+    return np.sum(-j * l / 2 * np.sum(np.roll(l, shift, axis) for shift in [-1, 1] for axis in range(d)))
+
+
 #@jit
 def possible_spin_configs(lx, ly, sp):
     """
@@ -68,29 +88,17 @@ def possible_spin_configs(lx, ly, sp):
 
 
 #@jit
-def normalization(sp_configs, j, kb, t):
+def exponent(sp_config, j, kb, t):
     """
 
-    :param sp_configs: np.array with all possible spin configurations
+    :param sp_config: lattice with possible spin config
     :param j: float prefactor of energy in Hamiltonian
     :param kb: float Boltzman constant
     :param t: float temperature
-    :return: float normalization factor (partition function Z) for calculation of probability
+    :return: float nth partial sum of normalization factor (partition function Z) for calculation of probability
     """
 
-    return np.sum([np.exp(-1.0 * l_hamiltonian(s_prime, j)/(kb * t)) for s_prime in sp_configs])
-
-
-def probability(n, l, j, kb, t):
-    """
-    :param n: float normalization factor (partition function Z)
-    :param l: np.array of lattice
-    :param kb: float Boltzman constant
-    :param t: float temperature
-    :return: float probability for lattice configuration s
-    """
-
-    return 1.0/n * np.exp(-l_hamiltonian(l, j)/(kb * t))
+    return np.exp(-1.0 * l_hamiltonian(sp_config, j)/(kb * t))
 
 
 def abs_magnetisation_sp(l):
@@ -117,23 +125,64 @@ def ising_test():
 
     for dim in NN_lattice:
 
+        # n_th normalization factor
+        n_norm = 0
+
+        # n_th probability
+        n_prob = 0
+
+        # n_th expectation value
+        n_a = 0
+
         # Init random lattice
         l = rand_lattice(dim, dim, spins)
 
         # All spin configs
         all_sp = possible_spin_configs(dim, dim, spins)
 
-        # Normalization
-        norm = normalization(all_sp, j, kb, t)
+        print all_sp.shape
 
-        # Probability
-        p = probability(norm, l, j, kb, t)
+        for s in all_sp:
 
-        # Expectation val of abs magnetisation
-        exp_m = p*abs_magnetisation_sp(l)
+            tmp_exp = exponent(s, j, kb, t)
 
-        res.append(exp_m)
+            n_norm += tmp_exp
+            n_prob += tmp_exp * abs_magnetisation_sp(s)
+
+            n_a = n_prob/n_norm
+
+        res.append(n_a)
 
     return res
 
-print ising_test()
+
+def ising_test_N(N):
+
+    spins = (-1, 1)
+    dim = N
+    kb = 1
+    j = 1
+    t = 2
+
+    n_norm = 0
+    n_prob = 0
+
+    res = [[], []]
+
+    # lattice
+    l = rand_lattice(dim, dim, spins)
+
+    # All spin configs
+    all_sp = possible_spin_configs(dim, dim, spins)
+
+    for i, s in enumerate(all_sp):
+        tmp_exp = exponent(s, j, kb, t)
+
+        n_norm += tmp_exp
+        n_prob += tmp_exp * abs_magnetisation_sp(s)
+
+        if i % 200 == 0:
+            res[0].append(i)
+            res[1].append(n_norm)
+
+    return res
