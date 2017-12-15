@@ -1,7 +1,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+from mpl_toolkits.mplot3d import Axes3D  # Is used in background for 3D plotting
 from numba import njit  # use numbas njit for speed-up
+
+# Check abs(slope z)
+# Make function that returns slope
+# Look at slope in between sandpiles. If slope over z_crit, redistribute 1 grain to x,y with "highest" slope
+# Distribute randomly if ALL slopes are equal:
+# Drop only 1 grain vs drop until slope is < slope_crit
+
+# Markus git : flooklab
 
 
 def init_sandbox(n, state=None, crit_pile=4):
@@ -99,28 +108,70 @@ def add_sand_random(s, crit_pile):
     add_sand(s, x_rand, y_rand, crit_pile)
 
 
-def main():
+def plot3d(s, iterations, crit_pile):
+    """
+    Plots evolution over time of sandpiles in 3D bar plot. Very slow, only suitable for N <= 20
+    :param s: np.array
+    :param iterations: number of grain drops
+    :param crit_pile: critical pile heigh
+    """
 
-    # Init variables and sandbox
-    iterations = 2000
-    crit_pile = 5
-    sandbox = init_sandbox(25, state='ground', crit_pile=crit_pile)
+    plt.ion()
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    xedges = np.arange(s.shape[0])
+    yedges = np.arange(s.shape[1])
+    xpos, ypos = np.meshgrid(xedges + 0.25, yedges + 0.25)
+    xpos = xpos.flatten('F')
+    ypos = ypos.flatten('F')
+    zpos = np.zeros_like(xpos)
+    dx=0.5*np.ones_like(zpos)
+    dy=dx.copy()
 
-    ########################################################################
-    # Plotting related
-    ########################################################################
+    for i in range(iterations):
+        add_sand_random(s, crit_pile=crit_pile)
+        dz = s.flatten()
+        ax.bar3d(xpos, ypos, zpos, dx, dy, dz, color='b', zsort='average')
+        ax.set_zlim3d(0, crit_pile-1)
+        plt.pause(0.10001)
+        if i != iterations-1:
+            ax.cla()
+
+    plt.ioff()
+    plt.show()
+
+
+def plot2d(s, iterations, crit_pile):
+    """
+    Plots evolution over time of sandpiles in 2D heat map plot.
+    :param s: np.array
+    :param iterations: number of grain drops
+    :param crit_pile: critical pile heigh
+    """
 
     plt.ion()  # interactive plotting
-    img = plt.imshow(sandbox, cmap='jet', vmin=0, vmax=crit_pile)  # make image with colormap BlueGreenRed
+    img = plt.imshow(s, cmap='jet', vmin=0, vmax=crit_pile)  # make image with colormap BlueGreenRed
     plt.colorbar(img)  # add colorbar
 
     for _ in range(iterations):
-        add_sand_random(sandbox, crit_pile)
-        img.set_data(sandbox)  # update image
+        add_sand_random(s, crit_pile)
+        img.set_data(s)  # update image
         plt.pause(0.00001)  # pause to allow interactive plotting
 
     plt.ioff()
     plt.show()
+
+
+
+
+def main():
+
+    # Init variables and sandbox
+    iterations = 100
+    crit_pile = 6
+    sandbox = init_sandbox(5, state='ground', crit_pile=crit_pile)
+
+    plot2d(sandbox, iterations, crit_pile)
 
 if __name__ == '__main__':
     main()
