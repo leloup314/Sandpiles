@@ -5,28 +5,22 @@ from mpl_toolkits.mplot3d import Axes3D  # Is used in background for 3D plotting
 from numba import njit  # use numbas njit for speed-up
 
 
-# Drop only 1 grain vs drop until slope is < slope_crit
+# TODO Drop only 1 grain vs drop until slope is < slope_crit ?
 
 
-def init_sandbox(dim, length, state=None, crit_slope=4):
+def init_sandbox(dim, length, state='empty'):
     """
-    Initialises an empty (0s) square NxN sandbox lattice on which the simulation is done.
+    Initialises a sandbox lattice (hypercube of dimension dim) on which the simulation is done.
 
     :param length: int dimension of sandbox
     :param state: str some state of the initial sandbox
-    :param crit_slope: int critical local slope of sandpile
-
+    :return: np.array sandbox of dimension dim
     """
 
-    #TODO change 'crit' and 'over_crit'; does not make sense here anymore
-    if state == 'one':
-        res = np.ones(shape=np.full(dim, fill_value=length), dtype=np.uint8)
-    elif state == 'crit':
-        res = np.full(shape=np.full(dim, fill_value=length), fill_value=crit_slope - 1, dtype=np.uint8)
-    elif state == 'over_crit':
-        res = np.full(shape=np.full(dim, fill_value=length), fill_value=crit_slope + 1, dtype=np.uint8)
+    if state == 'empty':
+        res = np.zeros(shape=(length,)*dim, dtype=np.uint32)
     else:  # None, ground state
-        res = np.zeros(shape=np.full(dim, fill_value=length), dtype=np.uint8)
+        res = np.zeros(shape=(length,)*dim, dtype=np.uint32)
 
     return res
 
@@ -40,48 +34,77 @@ def off_boundary(s, x):
     :param x: int position of grain drop-off
     """
 
-    #           Any x_i larger than sandbox size shape_i         or     any x_i smaller zero?
-    return ( (len(np.where( (x-np.array(s.shape)) >= 0)[0]) > 0) or (len(np.where(x < 0)[0]) > 0) )
+    for i, x_i in enumerate(x):
+        if (x_i >= s.shape[i]) or (x_i < 0):
+            return True
+    return False
+
+
+@njit
+def at_open_edge(s, x, open_bounds):
+    """
+    Checks whether point x is right at an edge of the sandbox.
+    Only consider edges exhibiting open boundary conditions in the query,
+    such that 'closed edges' are hidden from open boundary handling.
+
+    :param s: np.array
+    :param x: int position of grain drop-off
+    :param open_bounds: tuple (of 2 times sandbox's dimension) of booleans specifying
+                        open[True]/closed[False] boundary conditions for respective edges
+    """
+
+    # Cannot be at the edge AND off boundary
+    if off_boundary(s, x):
+        return False
+
+    for i, x_i in enumerate(x):
+        if (open_bounds[2*i] == True) and (x_i == 0):                   # x_i at i'th open lower edge?
+            return True
+        if (open_bounds[2*i+1] == True) and (x_i == s.shape[i] - 1):    # x_i at i'th open upper edge?
+            return True
+    return False
 
 
 #@njit
 def get_neighbours(x):
     """
     Finds all nearest neighbours of x and returns them.
+
     :param x: int position of grain drop-off
     :return: array of coordinates of neighbours
     """
 
-    # Dimension of the sandbox
-    dim = x.shape[0]
+    nn = []
+    x = list(x)
 
-    # Return nearest neighbours as np.array like
-    # [[x1-1, x2, ...][x1, x2-1, ...] ... [x1+1, x2, ...][x1, x2+1, ...] ...]
-    return (    np.array( ((np.ones(shape=(dim,1), dtype=np.uint8)*x - np.identity(dim)),
-                           (np.ones(shape=(dim,1), dtype=np.uint8)*x + np.identity(dim))), dtype=np.int8
-                        ).reshape((2*dim,dim))
-           )
+    for i, x_i in enumerate(x):
+        for shift in (-1, 1):
+            nn.append(tuple(x[0:i] + [x_i + shift] + x[i+1:]))
+
+    return np.array(nn)
 
 
 #@njit
 def get_neighbouringSlopes(s, x, neighbours):
     """
-    Returns slopes (pile height differences) to all nearest neighbours of x with respect to x.
+    Returns slopes (pile height differences) to all given neighbours of x with respect to x.
     Each slope value corresponds to a column vector in the neighbours-array (see also get_neighbours(x))
+
+    :param s: np.array sandbox
     :param x: int position of grain drop-off
+    :param neighbours: array of coordinates of neighbours
     :return: array of slopes
     """
 
-    # Dimension of the sandbox
-    dim = x.shape[0]
+    # Number of neighbours
+    num = neighbours.shape[0]
 
     # Set all slopes to 0 initially (closed boundary conditions)
-    retSlope = np.zeros(shape=2*dim, dtype=np.int8)
-    #TODO other boundary conditions?
+    retSlope = np.zeros(shape=num, dtype=np.int32)
 
     # Determine slopes to each neighbour from pile height differences
     # (if neighbour is off-boundary, just don't overwrite boundary conditions from above)
-    for i in range(2*dim):
+    for i in range(num):
         if not off_boundary(s, neighbours[i]):
             retSlope[i] = (s[tuple(x)] - s[tuple(neighbours[i])])
 
@@ -89,15 +112,46 @@ def get_neighbouringSlopes(s, x, neighbours):
 
 
 #@njit
-def do_relaxation(s, x_array, crit_slope, recLevel=0):
+def get_unique_rows(array):
     """
-    Performs the avalanche relaxation mechanism recursively until all slopes are non-critical anymore.
-    :param s: np.array
-    :param x_array: int position of grain drop-off or an array of positions for multiple simultaneous relaxations
-    :param crit_slope: int critical height of pile of sand grains
+    Returns array with removed duplicate rows.
+
+    :param array: 2-dim np.array
+    :return: 2-dim np.array with duplicate rows removed
     """
 
-##    print("Recursion level:", recLevel) # DEBUG information
+    # Perform lex sort on array
+    sorted_idx = np.lexsort(array.T)
+    sorted_array = array[sorted_idx]
+
+    # Get unique row mask
+    row_mask = np.append([True], np.any(a=np.diff(sorted_array,axis=0), axis=1))
+
+    # Return unique rows
+    return sorted_array[row_mask]
+
+
+#@njit
+def do_relaxation(s, x_array, crit_slope, open_bounds, avalanche_stats, recLevel=0):
+    """
+    Performs the avalanche relaxation mechanism recursively until all slopes are non-critical anymore.
+
+    :param s: np.array sandbox
+    :param x_array: int position of grain drop-off or an array of positions for multiple simultaneous relaxations
+    :param crit_slope: int critical height of pile of sand grains
+    :param open_bounds: boolean array of boundary conditions (open/closed)
+    :param avalanche_stats: dict used for gathering avalanche statistics
+    :param recLevel: int avalanche's recursion depth
+    :return: np.array changed sandbox after relaxation process
+    """
+
+    # Dimension of the sandbox
+    dim = s.ndim
+
+    # Use current recursion depth as avalanche's time extent
+    avalanche_stats["time"] = recLevel
+
+##    if recLevel > 6: print("Recursion level:", recLevel) # DEBUG information
 
     # Reshape x_array if it is only a single position, such that the loop below can be used in all cases
     if x_array.ndim == 1:
@@ -109,7 +163,7 @@ def do_relaxation(s, x_array, crit_slope, recLevel=0):
     sPrime = np.copy(s)
 
     # Note at which positions/iterations relaxation events happen
-    relaxEvents = np.array([], dtype=np.uint8)
+    relaxEvents = np.array([], dtype=np.uint32)
 
     # Loop through positions in x_array
     for it in range(x_array.shape[0]):
@@ -117,6 +171,12 @@ def do_relaxation(s, x_array, crit_slope, recLevel=0):
 
         # Dont try to relax if x is off-boundary
         if off_boundary(s, x):
+            continue
+
+        # If x is right at an 'open edge', just drop excess grains from sandpile for too large s[x]
+        if (s[tuple(x)] >= crit_slope) and at_open_edge(s, x, open_bounds):
+            sPrime[tuple(x)] = 0
+            relaxEvents = np.append(arr=relaxEvents, values=[it], axis=0)   # Bookkeeping (see below)
             continue
 
         ###-- Choose random nearest neighbour with maximum (and critical) slope. --###
@@ -138,16 +198,10 @@ def do_relaxation(s, x_array, crit_slope, recLevel=0):
             # Bookkeeping: actual relaxation event will happen at this recursion level
             relaxEvents = np.append(arr=relaxEvents, values=[it], axis=0)
 
-        # Sort slope heights and corresponding indices
-        sort_idx = np.argsort(crit_slopes)
-        crit_slopes_idx_sorted = crit_slopes_idx[sort_idx]
+        # Sort slope values (descending order) and corresponding indices
+        sort_idx = np.argsort(crit_slopes)[::-1]
         crit_slopes_sorted = crit_slopes[sort_idx]
         crit_neighbours_sorted = crit_neighbours[sort_idx]
-
-        # Reverse sorting
-        crit_slopes_idx_sorted = np.flip(m=crit_slopes_idx_sorted, axis=0)
-        crit_slopes_sorted = np.flip(m=crit_slopes_sorted, axis=0)
-        crit_neighbours_sorted = np.flip(m=crit_neighbours_sorted, axis=0)
 
         # Find neighbours with maximum slope
         current_max_slope = crit_slopes_sorted[0]
@@ -157,8 +211,9 @@ def do_relaxation(s, x_array, crit_slope, recLevel=0):
         tRnd = np.random.choice(a=max_slopes_idx, size=1)[0]
         rnd_crit_neighbour = crit_neighbours_sorted[tRnd]
 
-        ##- Drop grains to the chosen neighbour     -##
-        ##- until slope becomes non-critical again. -##
+        ##-- Drop grains to the chosen neighbour     --##
+        ##-- until slope becomes non-critical again. --##
+
         toDrop = np.ceil((current_max_slope - crit_slope + 1) / 2.0)
 
         sPrime[tuple(x)]                  -= toDrop
@@ -168,27 +223,36 @@ def do_relaxation(s, x_array, crit_slope, recLevel=0):
     if len(relaxEvents) == 0:
         return s
 
+    # Increase avalanche size about the number of additional relaxation events
+    avalanche_stats["size"] += len(relaxEvents)
+
     # Now after simultaneous relaxations at positions in x_array
     # relax all neighbours of actually relaxed positions in x_array simultaneously
     x_array_neighbours = get_neighbours(x_array[relaxEvents[0]])
     for it in relaxEvents[1:]:  #Skip first event as this is initial content of x_array_neighbours
         x_array_neighbours = np.append(arr=x_array_neighbours, values=get_neighbours(x_array[it]), axis=0)
-        #TODO do not add duplicate neighbours here
+
+    # Remove duplicate neighbours from x_array_neighbours
+    x_array_neighbours = get_unique_rows(x_array_neighbours)
 
     # Use sPrime as updated sandbox for next relaxation step
-    returnSandbox = do_relaxation(s=sPrime, x_array=x_array_neighbours, crit_slope=crit_slope, recLevel=recLevel+1)
+    returnSandbox = do_relaxation(s=sPrime, x_array=x_array_neighbours, crit_slope=crit_slope, open_bounds=open_bounds,
+                                  avalanche_stats=avalanche_stats, recLevel=recLevel+1)
 
     return returnSandbox
 
 
 #@njit
-def add_sand(s, x, crit_slope):
+def add_sand(s, x, crit_slope, open_bounds, avalanche_stats):
     """
     Adds grain of sand at x and initiates relaxation mechanism.
 
-    :param s: np.array
+    :param s: np.array sandbox
     :param x: int position of grain drop-off
     :param crit_slope: int critical height of pile of sand grains
+    :param open_bounds: boolean array of boundary conditions (open/closed)
+    :param avalanche_stats: dict used for gathering avalanche statistics
+    :return: np.array changed sandbox after adding sand and performing relaxation
     """
 
     # If off-boundary, 'drop' the grain from the sandbox and do nothing
@@ -199,102 +263,182 @@ def add_sand(s, x, crit_slope):
     s[tuple(x)] += 1
 
     # Initiate relaxation of the sandpile
-    s = do_relaxation(s, x, crit_slope)
+    s = do_relaxation(s, x, crit_slope, open_bounds, avalanche_stats)
 
     # Return fully relaxed sandpile
     return s
 
 
 #@njit
-def add_sand_random(s, crit_slope):
+def add_sand_random(s, crit_slope, open_bounds, avalanche_stats = {"time" : 0, "size" : 0}):
     """
     Adds one grain of sand at a random place in the sandbox.
 
-    :param s: np.array
+    :param s: np.array sandbox
     :param crit_slope: int critical height of pile of sand grains
+    :param open_bounds: boolean array of boundary conditions (open/closed)
+    :param avalanche_stats: dict used for gathering avalanche statistics
+    :return: np.array changed sandbox after adding sand and performing relaxation
     """
 
     # Generate random position
-    x_rand = np.zeros(shape=(s.ndim), dtype=np.uint8)
+    x_rand = np.zeros(shape=s.ndim, dtype=np.uint32)
     for i in range(s.ndim):
         x_rand[i] = np.random.randint(low=0, high=s.shape[i])
 
     # Add grain of sand at this position
-    s = add_sand(s, x_rand, crit_slope)
+    s = add_sand(s, x_rand, crit_slope, open_bounds, avalanche_stats)
 
     # Return relaxed sandpile with one more grain of sand on it
     return s
 
 
-#def plot3d(s, iterations, crit_slope):
-#    """
-#    Plots evolution over time of sandpiles in 3D bar plot. Very slow, only suitable for N <= 20
-#    :param s: np.array
-#    :param iterations: number of grain drops
-#    :param crit_slope: critical pile heigh
-#    """
-#
-#    plt.ion()
-#    fig = plt.figure()
-#    ax = fig.add_subplot(111, projection='3d')
-#    xedges = np.arange(s.shape[0])
-#    yedges = np.arange(s.shape[1])
-#    xpos, ypos = np.meshgrid(xedges + 0.25, yedges + 0.25)
-#    xpos = xpos.flatten('F')
-#    ypos = ypos.flatten('F')
-#    zpos = np.zeros_like(xpos)
-#    dx=0.5*np.ones_like(zpos)
-#    dy=dx.copy()
-#
-#    for i in range(iterations):
-#        add_sand_random(s, crit_slope=crit_slope)
-#        dz = s.flatten()
-#        ax.bar3d(xpos, ypos, zpos, dx, dy, dz, color='b', zsort='average')
-#        ax.set_zlim3d(0, crit_slope-1)
-#        plt.pause(0.10001)
-#        if i != iterations-1:
-#            ax.cla()
-#
-#    plt.ioff()
-#    plt.show()
-#
-#
-#def plot2d(s, iterations, crit_slope):
-#    """
-#    Plots evolution over time of sandpiles in 2D heat map plot.
-#    :param s: np.array
-#    :param iterations: number of grain drops
-#    :param crit_slope: critical pile heigh
-#    """
-#
-#    plt.ion()  # interactive plotting
-#    img = plt.imshow(s, cmap='jet', vmin=0, vmax=crit_slope)  # make image with colormap BlueGreenRed
-#    plt.colorbar(img)  # add colorbar
-#
-#    for _ in range(iterations):
-#        add_sand_random(s, crit_slope)
-#        img.set_data(s)  # update image
-#        plt.pause(0.00001)  # pause to allow interactive plotting
-#
-#    plt.ioff()
-#    plt.show()
+def get_2d_sandboxSlice(sandbox):
+    """
+    Returns 2-dim sub-array of sandbox for plotting purposes if dimension is larger than 2.
 
+    :param sandbox: np.array sandbox
+    :return: 2-dim sub-array of sandbox
+    """
+
+    if sandbox.ndim <= 2:
+        return sandbox
+
+    tdSlice = np.copy(sandbox)
+    tDim = sandbox.ndim
+
+    # Select sub-array in the middle until slice has 2 dimensions
+    while tDim > 2:
+        tdSlice = tdSlice[int(np.ceil((sandbox.shape[tDim-1]-1) / 2.0))]
+        tDim -= 1
+
+    return tdSlice
+
+
+def plot3d(sandbox, iterations, crit_slope, open_bounds, pause):
+    """
+    Plots evolution over time of sandpiles in 3D bar plot. Very slow, only suitable for N <= 20.
+
+    :param sandbox: np.array sandbox to start from
+    :param iterations: number of grain drops
+    :param crit_slope: critical slope
+    :param open_bounds: boolean array of boundary conditions (open/closed)
+    :param pause: time delay between grain drops
+    """
+
+    # If sandbox dimension is larger 2, choose 2-dim slice in the middle for plotting
+    sbSlice = get_2d_sandboxSlice(sandbox)
+
+    plt.ion()
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    xedges = np.arange(sbSlice.shape[0])
+    yedges = np.arange(sbSlice.shape[1])
+    xpos, ypos = np.meshgrid(xedges + 0.25, yedges + 0.25)
+    xpos = xpos.flatten('F')
+    ypos = ypos.flatten('F')
+    zpos = np.zeros_like(xpos)
+    dx = 0.5*np.ones_like(zpos)
+    dy = dx.copy()
+
+    for i in range(iterations):
+        sandbox = add_sand_random(s=sandbox, crit_slope=crit_slope, open_bounds=open_bounds)
+
+        # If sandbox dimension is larger 2, choose 2-dim slice in the middle for plotting
+        sbSlice = get_2d_sandboxSlice(sandbox)
+
+        dz = sbSlice.flatten()
+        ax.bar3d(xpos, ypos, zpos, dx, dy, dz, color='b', zsort='average')
+
+        # Pause to allow interactive plotting
+        plt.pause(pause)
+
+        if i != iterations-1:
+            ax.cla()
+
+    plt.ioff()
+    plt.show()
+
+    return sandbox
+
+
+def plot2d(sandbox, iterations, crit_slope, open_bounds, pause):
+    """
+    Plots evolution over time of sandpiles in 2D heat map plot.
+
+    :param sandbox: np.array sandbox to start from
+    :param iterations: number of grain drops
+    :param crit_slope: critical slope
+    :param open_bounds: boolean array of boundary conditions (open/closed)
+    :param pause: time delay between grain drops
+    :return: np.array changed sandbox after iterations
+    """
+
+    # Interactive plotting
+    plt.ion()
+
+    # If sandbox dimension is larger 2, choose 2-dim slice in the middle for plotting
+    sbSlice = get_2d_sandboxSlice(sandbox)
+
+    # Make image with colormap BlueGreenRed
+    img = plt.imshow(X=sbSlice, cmap='jet')
+
+    # Add colorbar
+    plt.colorbar(img)
+
+    for _ in range(iterations):
+        sandbox = add_sand_random(s=sandbox, crit_slope=crit_slope, open_bounds=open_bounds)
+
+        # If sandbox dimension is larger 2, choose 2-dim slice in the middle for plotting
+        sbSlice = get_2d_sandboxSlice(sandbox)
+
+        # Update image
+        img.set_data(sbSlice)
+
+        # Pause to allow interactive plotting
+        plt.pause(pause)
+
+    plt.ioff()
+    plt.show()
+
+    return sandbox
 
 
 
 def main():
 
     # Init variables and sandbox
-    iterations = 10000
+    iterations = 100000
     crit_slope = 5
-    sandbox = init_sandbox(dim=2, length=10, state='one', crit_slope=crit_slope)
+    dimension = 2
+    length = 30
+    sandbox = init_sandbox(dim=dimension, length=length, state='empty')
 
-    for _ in range(iterations):
-        sandbox = add_sand_random(sandbox, crit_slope)
+    # Define boundary conditions
+    open_boundaries=(True,)*2*dimension         # Open boundary conditions at all lower/upper edges
+    #open_boundaries=(False,)*2*dimension        # Closed boundary conditions at all lower/upper edges
+    #open_boundaries=(False,False,False,True)    # 2-dim model, one open boundary
+    #open_boundaries=(True,False,True,True)      # 2-dim model, one closed boundary
+    #open_boundaries=(True,False,False,True)     # 2-dim model, two closed boundaries
 
-    print(sandbox)
 
-#    plot2d(sandbox, iterations, crit_slope)
+    # Create random critical sandpile
+    for i in range(iterations):
+        sandbox = add_sand_random(s=sandbox, crit_slope=crit_slope, open_bounds=open_boundaries)
+
+
+    # Study avalanche statistics
+    for i in range(1000):
+        avalanche_statistics = {"time" : 0, "size" : 0}
+        sandbox = add_sand_random(s=sandbox, crit_slope=crit_slope, open_bounds=open_boundaries,
+                                  avalanche_stats=avalanche_statistics)
+        if avalanche_statistics["time"] > 1:
+            print(avalanche_statistics)
+
+    # Plot evolution of critical sandpile
+    plot2d(sandbox=sandbox, iterations=50, crit_slope=crit_slope, open_bounds=open_boundaries, pause=0.25)
+
+
 
 if __name__ == '__main__':
     main()
