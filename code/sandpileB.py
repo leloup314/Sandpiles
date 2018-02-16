@@ -1,11 +1,12 @@
+import csv
+import os.path
 import numpy as np
+import scipy.spatial.distance as dist
 import matplotlib.pyplot as plt
 
 from mpl_toolkits.mplot3d import Axes3D  # Is used in background for 3D plotting
 from numba import njit  # use numbas njit for speed-up
 
-
-# TODO Drop only 1 grain vs drop until slope is < slope_crit ?
 
 
 def init_sandbox(dim, length, state='empty'):
@@ -63,6 +64,18 @@ def at_open_edge(s, x, open_bounds):
         if (open_bounds[2*i+1] == True) and (x_i == s.shape[i] - 1):    # x_i at i'th open upper edge?
             return True
     return False
+
+
+#@njit
+def distance(x1, x2):#TODO description...
+    """
+    Finds all nearest neighbours of x and returns them.
+
+    :param x: int position of grain drop-off
+    :return: array of coordinates of neighbours
+    """
+
+    return np.linalg.norm(x1-x2)
 
 
 #@njit
@@ -132,7 +145,7 @@ def get_unique_rows(array):
 
 
 #@njit
-def do_relaxation(s, x_array, crit_slope, open_bounds, avalanche_stats, recLevel=0):
+def do_relaxation(s, x_0, x_array, crit_slope, open_bounds, avalanche_stats, avalanche_drops, recLevel=0):
     """
     Performs the avalanche relaxation mechanism recursively until all slopes are non-critical anymore.
 
@@ -147,11 +160,6 @@ def do_relaxation(s, x_array, crit_slope, open_bounds, avalanche_stats, recLevel
 
     # Dimension of the sandbox
     dim = s.ndim
-
-    # Use current recursion depth as avalanche's time extent
-    avalanche_stats["time"] = recLevel
-
-##    if recLevel > 6: print("Recursion level:", recLevel) # DEBUG information
 
     # Reshape x_array if it is only a single position, such that the loop below can be used in all cases
     if x_array.ndim == 1:
@@ -207,24 +215,43 @@ def do_relaxation(s, x_array, crit_slope, open_bounds, avalanche_stats, recLevel
         current_max_slope = crit_slopes_sorted[0]
         max_slopes_idx = np.where(crit_slopes_sorted == current_max_slope)[0]
 
-        # Choose random neighbour out of those with maximum slope
-        tRnd = np.random.choice(a=max_slopes_idx, size=1)[0]
-        rnd_crit_neighbour = crit_neighbours_sorted[tRnd]
+        ##-- Drop grains to all maximum-slope neighbours --##
+        ##-- until slope becomes zero.                   --##
 
-        ##-- Drop grains to the chosen neighbour     --##
-        ##-- until slope becomes non-critical again. --##
+        N = len(max_slopes_idx)
+        toDrop = int(np.floor(current_max_slope * (N / (N + 1.0))))
 
-        toDrop = np.ceil((current_max_slope - crit_slope + 1) / 2.0)
+        sPrime[tuple(x)] -= toDrop
 
-        sPrime[tuple(x)]                  -= toDrop
-        sPrime[tuple(rnd_crit_neighbour)] += toDrop
+        offset = np.random.randint(N)   # Randomly select initial drop neighbour
+        for i in range(toDrop):
+            tIdx = max_slopes_idx[(i+offset) % N]
+            sPrime[tuple(crit_neighbours_sorted[tIdx])] += 1
+
+        # Record all drops on all sites, count number of drop events on each site
+        for index in max_slopes_idx:
+            drop_site = tuple(crit_neighbours_sorted[index])
+            avalanche_drops[drop_site] = 1 if drop_site not in avalanche_drops else avalanche_drops[drop_site] + 1
+
+
+    ###-- STATISTICS --###
+    # Use current recursion depth as avalanche's time extent
+    avalanche_stats["time"] = recLevel
+
+    # Increase avalanche size about the number of additional relaxation events
+    avalanche_stats["relaxations"] += len(relaxEvents)
+
+    # Use current maximum distance from avalanche's origin as linear avalanche size
+    for event in relaxEvents:
+        d = distance(x_array[event], x_0)
+        avalanche_stats["linSize"] = max(avalanche_stats["linSize"], d)
+
+    ###----------------###
+
 
     # If no relaxation actually happened the avalanche stops at this recursion level
     if len(relaxEvents) == 0:
         return s
-
-    # Increase avalanche size about the number of additional relaxation events
-    avalanche_stats["size"] += len(relaxEvents)
 
     # Now after simultaneous relaxations at positions in x_array
     # relax all neighbours of actually relaxed positions in x_array simultaneously
@@ -236,14 +263,14 @@ def do_relaxation(s, x_array, crit_slope, open_bounds, avalanche_stats, recLevel
     x_array_neighbours = get_unique_rows(x_array_neighbours)
 
     # Use sPrime as updated sandbox for next relaxation step
-    returnSandbox = do_relaxation(s=sPrime, x_array=x_array_neighbours, crit_slope=crit_slope, open_bounds=open_bounds,
-                                  avalanche_stats=avalanche_stats, recLevel=recLevel+1)
+    returnSandbox = do_relaxation(s=sPrime, x_0=x_0, x_array=x_array_neighbours, crit_slope=crit_slope, open_bounds=open_bounds,
+                                  avalanche_stats=avalanche_stats, avalanche_drops=avalanche_drops, recLevel=recLevel+1)
 
     return returnSandbox
 
 
 #@njit
-def add_sand(s, x, crit_slope, open_bounds, avalanche_stats):
+def add_sand(s, x, crit_slope, open_bounds, avalanche_stats, avalanche_drops):
     """
     Adds grain of sand at x and initiates relaxation mechanism.
 
@@ -262,15 +289,18 @@ def add_sand(s, x, crit_slope, open_bounds, avalanche_stats):
     # Add grain to sandbox
     s[tuple(x)] += 1
 
+    # Record initial sand drop
+    avalanche_drops[tuple(x)] = 1
+
     # Initiate relaxation of the sandpile
-    s = do_relaxation(s, x, crit_slope, open_bounds, avalanche_stats)
+    s = do_relaxation(s=s, x_0=x, x_array=x, crit_slope=crit_slope, open_bounds=open_bounds, avalanche_stats=avalanche_stats, avalanche_drops=avalanche_drops)
 
     # Return fully relaxed sandpile
     return s
 
 
 #@njit
-def add_sand_random(s, crit_slope, open_bounds, avalanche_stats = {"time" : 0, "size" : 0}):
+def add_sand_random(s, crit_slope, open_bounds, avalanche_stats = {"time" : 0, "relaxations" : 0, "linSize" : 0}, avalanche_drops={}):
     """
     Adds one grain of sand at a random place in the sandbox.
 
@@ -287,10 +317,20 @@ def add_sand_random(s, crit_slope, open_bounds, avalanche_stats = {"time" : 0, "
         x_rand[i] = np.random.randint(low=0, high=s.shape[i])
 
     # Add grain of sand at this position
-    s = add_sand(s, x_rand, crit_slope, open_bounds, avalanche_stats)
+    s = add_sand(s, x_rand, crit_slope, open_bounds, avalanche_stats, avalanche_drops)
 
     # Return relaxed sandpile with one more grain of sand on it
     return s
+
+
+def get_linear_size(avalanche_drops):
+    return np.max(dist.cdist(avalanche_drops.keys(), avalanche_drops.keys(), 'euclidean'))
+
+def get_num_drops(avalanche_drops):
+    return sum(avalanche_drops.values())
+
+def get_area(avalanche_drops):
+    return len(avalanche_drops)
 
 
 def get_2d_sandboxSlice(sandbox):
@@ -408,11 +448,85 @@ def plot2d(sandbox, iterations, crit_slope, open_bounds, pause):
 def main():
 
     # Init variables and sandbox
-    iterations = 100000
+    iterations = 2000
     crit_slope = 5
     dimension = 2
-    length = 30
-    sandbox = init_sandbox(dim=dimension, length=length, state='empty')
+    length = 8
+#    sandbox = init_sandbox(dim=dimension, length=length, state='empty')
+
+    sandbox[0,0] = 6
+    sandbox[0,1] = 6
+    sandbox[0,2] = 6
+    sandbox[0,3] = 8
+    sandbox[0,4] = 6
+    sandbox[0,5] = 6
+    sandbox[0,6] = 6
+    sandbox[0,7] = 6
+
+    sandbox[1,0] = 6
+    sandbox[1,1] = 5
+    sandbox[1,2] = 9
+    sandbox[1,3] = 12
+    sandbox[1,4] = 10
+    sandbox[1,5] = 8
+    sandbox[1,6] = 4
+    sandbox[1,7] = 6
+
+    sandbox[2,0] = 6
+    sandbox[2,1] = 9
+    sandbox[2,2] = 13
+    sandbox[2,3] = 16
+    sandbox[2,4] = 14
+    sandbox[2,5] = 12
+    sandbox[2,6] = 8
+    sandbox[2,7] = 6
+
+    sandbox[3,0] = 9
+    sandbox[3,1] = 13
+    sandbox[3,2] = 17
+    sandbox[3,3] = 20
+    sandbox[3,4] = 16
+    sandbox[3,5] = 13
+    sandbox[3,6] = 9
+    sandbox[3,7] = 6
+
+    sandbox[4,0] = 6
+    sandbox[4,1] = 9
+    sandbox[4,2] = 13
+    sandbox[4,3] = 16
+    sandbox[4,4] = 12
+    sandbox[4,5] = 13
+    sandbox[4,6] = 9
+    sandbox[4,7] = 6
+
+    sandbox[5,0] = 6
+    sandbox[5,1] = 5
+    sandbox[5,2] = 9
+    sandbox[5,3] = 12
+    sandbox[5,4] = 9
+    sandbox[5,5] = 9
+    sandbox[5,6] = 5
+    sandbox[5,7] = 6
+
+    sandbox[6,0] = 6
+    sandbox[6,1] = 6
+    sandbox[6,2] = 6
+    sandbox[6,3] = 8
+    sandbox[6,4] = 6
+    sandbox[6,5] = 6
+    sandbox[6,6] = 6
+    sandbox[6,7] = 6
+
+    sandbox[7,0] = 6
+    sandbox[7,1] = 6
+    sandbox[7,2] = 6
+    sandbox[7,3] = 6
+    sandbox[7,4] = 6
+    sandbox[7,5] = 6
+    sandbox[7,6] = 6
+    sandbox[7,7] = 6
+
+    sandbox = np.zeros(shape=(length,)*dimension, dtype=np.uint32)
 
     # Define boundary conditions
     open_boundaries=(True,)*2*dimension         # Open boundary conditions at all lower/upper edges
@@ -421,22 +535,57 @@ def main():
     #open_boundaries=(True,False,True,True)      # 2-dim model, one closed boundary
     #open_boundaries=(True,False,False,True)     # 2-dim model, two closed boundaries
 
+    numOB = sum(open_boundaries)    # Number of open boundaries
 
-    # Create random critical sandpile
-    for i in range(iterations):
-        sandbox = add_sand_random(s=sandbox, crit_slope=crit_slope, open_bounds=open_boundaries)
+#    # Create random critical sandpile
+#    for i in range(iterations):
+#        sandbox = add_sand_random(s=sandbox, crit_slope=crit_slope, open_bounds=open_boundaries)
 
 
+    # Create output file for avalanche statistics
+    file_name = "./logs/sandpileStats_SLOPE" + str(crit_slope) + "_INIT" + str(iterations) + \
+                "_DIM" + str(dimension) + "_OB" + str(numOB) + "_L" + str(length) + ".csv"
+
+    #Don't overwrite existing .csv-files
+    fncounter=1
+    while os.path.isfile(file_name):
+        file_name = file_name.split(".csv")[0]
+        file_name = file_name + "_" + str(fncounter) + ".csv"
+        fncounter = fncounter + 1
+    
     # Study avalanche statistics
-    for i in range(1000):
-        avalanche_statistics = {"time" : 0, "size" : 0}
-        sandbox = add_sand_random(s=sandbox, crit_slope=crit_slope, open_bounds=open_boundaries,
-                                  avalanche_stats=avalanche_statistics)
-        if avalanche_statistics["time"] > 1:
+    with open(file_name, 'w') as statsFile:
+        fieldnames = ["time", "relaxations", "linSize"]
+        writer = csv.DictWriter(statsFile, fieldnames=fieldnames)
+        writer.writeheader()
+
+        for i in range(1):
+            avalanche_statistics = {"time" : 0, "relaxations" : 0, "linSize" : 0}
+            avalanche_drops = {}
+
+            plot2d(sandbox=sandbox, iterations=0, crit_slope=crit_slope, open_bounds=open_boundaries, pause=0.25)
+            plt.pause(1)
+
+#            sandbox = add_sand_random(s=sandbox, crit_slope=crit_slope, open_bounds=open_boundaries,
+#                                      avalanche_stats=avalanche_statistics, avalanche_drops=avalanche_drops)
+            sandbox = add_sand(s=sandbox, x=np.array([3,4]), crit_slope=crit_slope, open_bounds=open_boundaries,
+                                      avalanche_stats=avalanche_statistics, avalanche_drops=avalanche_drops)
+
+            plot2d(sandbox=sandbox, iterations=0, crit_slope=crit_slope, open_bounds=open_boundaries, pause=0.25)
+
+            print(avalanche_drops)
             print(avalanche_statistics)
 
+            print(get_linear_size(avalanche_drops))
+            print(get_num_drops(avalanche_drops))
+            print(get_area(avalanche_drops))
+
+
+            writer.writerow(avalanche_statistics)
+
+
     # Plot evolution of critical sandpile
-    plot2d(sandbox=sandbox, iterations=50, crit_slope=crit_slope, open_bounds=open_boundaries, pause=0.25)
+#    plot2d(sandbox=sandbox, iterations=10, crit_slope=crit_slope, open_bounds=open_boundaries, pause=0.25)
 
 
 
