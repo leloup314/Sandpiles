@@ -4,3 +4,8 @@
 *.log
 # Python
 *.pyc
+# LaTeX
+report/*
+!report/*.tex
+!report/*.bib
+report/reportNotes.bib
