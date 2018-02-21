@@ -19,9 +19,9 @@ def init_sandbox(dim, length, state='empty'):
     """
 
     if state == 'empty':
-        res = np.zeros(shape=(length,)*dim, dtype=np.uint32)
+        res = np.zeros(shape=(length,)*dim, dtype=np.int32)
     else:  # None, ground state
-        res = np.zeros(shape=(length,)*dim, dtype=np.uint32)
+        res = np.zeros(shape=(length,)*dim, dtype=np.int32)
 
     return res
 
@@ -428,31 +428,108 @@ def plot2d(sandbox, iterations, crit_slope, open_bounds, pause):
 
     return sandbox
 
+def plot2dAvalanche(sandbox, avalanchePoints):
+    """
+    Displays the spread of a single avalanche consisting of avalanchePoints
+
+    :param sandbox: np.array sandbox
+    :param avalanchePoints: array of points included in the avalanche
+    """
+
+    for i, x in enumerate(avalanchePoints):
+        sandbox[x] = -10
+
+    # Interactive plotting
+    plt.ion()
+
+    # Make image with colormap BlueGreenRed
+    img = plt.imshow(X=sandbox, cmap='jet')
+
+    # Add colorbar
+    plt.colorbar(img)
+
+    plt.ioff()
+    plt.show()
+
+
+def get_criticality(sandbox, crit_slope):
+    """
+    Returns criticality parameter based on slope distribution
+    that is 0 for a flat pile and ~1 for a critical pile.
+
+    :param sandbox: np.array sandbox
+    :param sandbox: int critical slope
+    :return: float criticality parameter
+    """
+
+    slopeSum = 0
+
+    # Loop through all axes to sum up slopes in all directions
+    for i in xrange(sandbox.ndim):
+
+        # Shift i-th axis about 1
+        sShift = np.roll(sandbox, 1, axis=i)
+
+        # Sum absolute slope values at each point (except at the 'lower' edge (no periodic boundaries!))
+        it = np.nditer(sShift, flags=['multi_index'])
+        while not it.finished:
+            if it.multi_index[i] == 0:
+                it.iternext()
+                continue
+            slopeSum += abs((sShift - sandbox)[it.multi_index])
+            it.iternext()
+
+    critParm = float(slopeSum) / sandbox.size / (crit_slope - 1)
+
+    return critParm
 
 
 def main():
 
     # Init variables and sandbox
-    iterations = 10000
+    iterations = 1000000
     crit_slope = 5
     dimension = 2
-    length = 20
+    length = 50
     sandbox = init_sandbox(dim=dimension, length=length, state='empty')
 
 #    sandbox = np.load("./test_sandbox_8x8.npy")
 
     # Define boundary conditions
-    open_boundaries=(True,)*2*dimension         # Open boundary conditions at all lower/upper edges
+    #open_boundaries=(True,)*2*dimension         # Open boundary conditions at all lower/upper edges
     #open_boundaries=(False,)*2*dimension        # Closed boundary conditions at all lower/upper edges
     #open_boundaries=(False,False,False,True)    # 2-dim model, one open boundary
     #open_boundaries=(True,False,True,True)      # 2-dim model, one closed boundary
-    #open_boundaries=(True,False,False,True)     # 2-dim model, two closed boundaries
+    open_boundaries=(True,False,False,True)     # 2-dim model, two closed boundaries
 
     numOB = sum(open_boundaries)    # Number of open boundaries
 
+
+
     # Create random critical sandpile
-    for i in range(iterations):
+    critEvolution = {}
+    N = 20000
+    for i in xrange(iterations):    # Loop until sandpile is critical or
+                                    # maximum number of iterations reached
+
+        # Check criticality every N-th iteration
+        if i % N == 0:
+            critEvolution[i] = get_criticality(sandbox=sandbox, crit_slope=crit_slope)
+
+            # Stop loop when criticality parameter saturates
+            if i > 0:
+                tDiff = (critEvolution[i] - critEvolution[i-N]) / N
+                print("i="+str(i)+", cParm="+str(critEvolution[i])+", cParmDiff="+str(tDiff))
+                if tDiff < 1e-8:
+                    print("Done. Sandpile critical at i=" + str(i))
+                    #break
+
+        # Add sand at random position
         sandbox = add_sand_random(s=sandbox, crit_slope=crit_slope, open_bounds=open_boundaries)
+
+    # Print evolution of criticality parameter
+    print(','.join(map(str, np.sort(critEvolution.values()))))
+
 
 
     # Create output file for avalanche statistics
@@ -465,15 +542,17 @@ def main():
         file_name = file_name.split(".csv")[0]
         file_name = file_name + "_" + str(fncounter) + ".csv"
         fncounter = fncounter + 1
-    
+
+    print("___Statistics___")
+
     # Study avalanche statistics
     with open(file_name, 'w') as statsFile:
         fieldnames = ["time", "relaxations", "linSize", "size", "area"]
         writer = csv.DictWriter(statsFile, fieldnames=fieldnames)
         writer.writeheader()
 
-        for i in range(1000):
-            avalanche_statistics = {"time" : 0, "relaxations" : 0}
+        for i in range(iterations):
+            avalanche_statistics = {"time" : 0, "relaxations" : 0, "linSize": 0, "size" : 0, "area" : 0}
             avalanche_events = {}
 
             sandbox = add_sand_random(s=sandbox, crit_slope=crit_slope, open_bounds=open_boundaries,
@@ -483,11 +562,17 @@ def main():
             avalanche_statistics["size"] = get_num_drops(avalanche_events)
             avalanche_statistics["area"] = get_area(avalanche_events)
 
+            if avalanche_statistics["area"] > 25:
+                sPrime = np.copy(sandbox)
+                print(avalanche_events)
+                plot2dAvalanche(sandbox=sPrime, avalanchePoints=avalanche_events.keys())
+
             writer.writerow(avalanche_statistics)
 
 
+
     # Plot evolution of critical sandpile
-    plot2d(sandbox=sandbox, iterations=10, crit_slope=crit_slope, open_bounds=open_boundaries, pause=0.25)
+    plot2d(sandbox=sandbox, iterations=1, crit_slope=crit_slope, open_bounds=open_boundaries, pause=0.25)
 
 
 
