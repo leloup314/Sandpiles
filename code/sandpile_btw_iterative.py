@@ -433,7 +433,7 @@ def main():
     _SAND_DROPS = 1000000
     
     # Point to drop to in sandbox;if None, drop randomly
-    _POINT = None
+    _POINT = (249, 249)
     
     # Whether to plot results
     _PLOT_RES = True
@@ -460,7 +460,7 @@ def main():
             s = init_sandbox(_L, _D)
             
             # Fill sandbox until critical
-            #fill_sandbox(s, _CRIT_H[i], level=0.75)
+            # fill_sandbox(s, _CRIT_H[i], level=0.75)
         
             # Make structured np.array to store results in
             result_array = np.array(np.zeros(shape=_SAND_DROPS),
