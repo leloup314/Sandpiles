@@ -91,9 +91,8 @@ def relax_pile(s, critical_point, neighbours, amount, result):
         amount -= 1
         i += 1
         
-    # Write the statistics to results
+    # Increase total amount of dropped grains by i
     result['total_drops'] += i
-    result['area'] += n_neighbours + 1
         
 
 def relax_sandbox(s, critical_points, amount, neighbour_LUD, result, avalanche):
@@ -216,16 +215,26 @@ def do_simulation(s, crit_pile, total_drops, point, result_array, plot_simulatio
         # Add initially dropped grain to total drops
         current_result['total_drops'] += 1
         
-        # Store amount of relaxations within this iteration; equivalent to avalanche time
+        # Store amount of relaxations within this iteration; equivalent to avalanche duration
         current_result['relaxations'] = relaxations
         
-        # Get the linear size of the current avalanche if there were relaxations; memory error for dimensions larger than 2 and lengths larger than 20
+        # Get number of sites participating in current avalanche
+        current_result['area'] = np.count_nonzero(current_avalanche)
+        
+        # Get the linear size of the current avalanche if there were relaxations
         if relaxations != 0:
+            
+            # Get coordinates of avalanche sites
             coords = np.column_stack(np.where(current_avalanche))
+            
+            # Get maximum distance between them
             try:
                 current_result['lin_size'] = np.amax(pdist(coords))  # This gets slow (> 10 ms) for large (> 50 x 50) sandboxes but is still fastest choice
+            
+            # Memory error for large amount of avalanche sites
             except MemoryError:
                 logging.warning('Memory error due to large avalanche for drop %i. No "lin_size" calculated.' % drop)
+                pass  # Do nothing
                 
         # Reset avalanche configuration for use in next iteration
         tmp_avalanche[:] = 0
@@ -275,13 +284,16 @@ def plot_sandbox(s, total_drops, point=None, output_pdf=None):
             out.savefig(plt.figure())
             
 
-def plot_hist(data):
+def plot_hist(data, title=None):
     """
     Histogramms data and bin centers
     
     :param data: np.array of data to histogram
+    :param title: str of title
     """
     
+    if title is not None:
+        plt.title(title)
     data_unique, data_count = np.unique(data, return_counts=True)
     counts, bin_edges, _ = plt.hist(data)
     bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
@@ -409,22 +421,22 @@ def main():
     ### Initialization simulation variables ###
     
     # Length of sandbox; can be iterable for several simulations
-    _LEN = 100
+    _LEN = (20, 50, 70, 100)
     
     # Dimensions; can be iterable for several simulations
-    _DIM = 2
+    _DIM = (1, 2, 3)
     
     # Set critical sand pile height; usually equal to number of neighbours
     _CRIT_H = tuple(2 * _D for _D in _DIM) if isinstance(_DIM, Iterable) else 2 * _DIM
     
     # Number of total sand drops
-    _SAND_DROPS = 100000
+    _SAND_DROPS = 1000000
     
     # Point to drop to in sandbox;if None, drop randomly
     _POINT = None
     
     # Whether to plot results
-    _PLOT_RES = False
+    _PLOT_RES = True
     
     # Whether to plot the evolution of the sandbox
     _PLOT_SIM = False
@@ -489,7 +501,7 @@ def main():
                 
                 # Plot all histograms
                 for field in result_array.dtype.names:
-                    plot_hist(result_array[field])
+                    plot_hist(result_array[field], title=field)
             
             # Save the simulation results
             if _SAVE_SIMULATION:
