@@ -2,16 +2,21 @@
 
 import os  # File saving etc.
 import time  # Timing
+import logging  # User feedback
 import numpy as np  # Arrays with fast, vectorized operations and flexible structure
 import matplotlib.pyplot as plt  # Plotting
 import pyqtgraph as pg  # Plotting
-import powerlaw as pl  # Fitting power laws
 
 from PyQt5 import QtWidgets, QtCore  # Plotting
 from matplotlib.backends.backend_pdf import PdfPages  # Plotting
-from scipy.spatial.distance import cdist  # Calculate distances
-from scipy.optimize import curve_fit  # Fitting
+from scipy.spatial.distance import cdist, pdist  # Calculate distances
 from numba import njit  # Speed-up
+from collections import Iterable  # Type checking
+
+logging.basicConfig(level=logging.INFO)
+
+
+### Simulation functions ###
 
 
 def init_sandbox(n, dim, state=None, crit_pile=4):
@@ -139,21 +144,7 @@ def add_sand(s, point=None, amount=1):
     
     # Add to point
     s[tuple(point)] += amount
-
-
-def fill_sandbox(s, crit_pile, level=0.8):
-    """
-    Fills s with sand until a 'level' fraction of sites of the sandbox are critical.
-    
-    :param s: np.array of sandbox
-    :param crit_pile: int critical height of sand piles
-    :param level: float percentage of lattice sites which must be critical
-    """
-
-    while (np.sum(s, dtype=np.float) / np.sum(np.full(shape=s.shape, fill_value=crit_pile), dtype=np.float)) < level:
-        m = s < crit_pile
-        s[m] = np.random.choice(np.arange(crit_pile+1), size=s[m].shape)
-
+        
 
 def do_simulation(s, crit_pile, total_drops, point, result_array, plot_simulation=False, avalanche=None):
     """
@@ -177,8 +168,21 @@ def do_simulation(s, crit_pile, total_drops, point, result_array, plot_simulatio
     # Make temporary array to store avalanche configuration in order to calculate linear size
     tmp_avalanche = np.zeros_like(s, dtype=np.bool)
     
+    # Timing estimate
+    estimate_time = time.time()
+
     # Drop sand iteratively
     for drop in xrange(total_drops):
+        
+        # Feedback
+        if drop % (5e-3 * total_drops) == 0 and drop > 0:
+            # Timing estimate
+            avg_time = (time.time() - estimate_time) / drop  # Average time taken for the last 0.5% of total_drops
+            est_hours = avg_time * (total_drops-drop)/60**2
+            est_mins = (est_hours % 1) * 60
+            est_secs = (est_mins % 1) * 60
+            msg = 'At drop %i of %i total drops (%.1f %s). Estimated time left: %i h %i m %i s' % (drop, total_drops, 100 * float(drop)/total_drops, "%", int(est_hours), int(est_mins), int(est_secs))
+            logging.info(msg)
         
         # Extract result array for current iteration
         current_result = result_array[drop]
@@ -202,30 +206,52 @@ def do_simulation(s, crit_pile, total_drops, point, result_array, plot_simulatio
             # Increment relaxation counter
             relaxations += 1
             
-            # Real-time plotting
+            # Fast plotting
             if plot_simulation:
-                plot_simulation.setImage(s, levels=(0, crit_pile), autoDownsample=True)
+                plot_simulation.setImage(s, levels=(0, crit_pile), autoHistogramRange=False)
                 pg.QtGui.QApplication.processEvents()
+        
         ### RESULTS ###        
                 
         # Add initially dropped grain to total drops
         current_result['total_drops'] += 1
         
-        # Store amount of relaxations within this iteration
+        # Store amount of relaxations within this iteration; equivalent to avalanche time
         current_result['relaxations'] = relaxations
         
-        # Get the linear size of the current avalanche if there were relaxations
+        # Get the linear size of the current avalanche if there were relaxations; memory error for dimensions larger than 2 and lengths larger than 20
         if relaxations != 0:
             coords = np.column_stack(np.where(current_avalanche))
-            current_result['lin_size'] = np.amax(cdist(coords, coords))  # This gets slow (> 10 ms) for large (> 50 x 50) sandboxes but is still fastest choice
-        
+            try:
+                current_result['lin_size'] = np.amax(pdist(coords))  # This gets slow (> 10 ms) for large (> 50 x 50) sandboxes but is still fastest choice
+            except MemoryError:
+                logging.warning('Memory error due to large avalanche for drop %i. No "lin_size" calculated.' % drop)
+                
         # Reset avalanche configuration for use in next iteration
         tmp_avalanche[:] = 0
         
-        # Real-time plotting
+        # Fast plotting
         if plot_simulation:
-            plot_simulation.setImage(s, levels=(0, crit_pile), autoDownsample=True)
+            plot_simulation.setImage(s, levels=(0, crit_pile), autoHistogramRange=False)
             pg.QtGui.QApplication.processEvents()
+            
+            
+def fill_sandbox(s, crit_pile, level=0.8):
+    """
+    Fills s with sand until a 'level' fraction of sites of the sandbox are critical.
+    
+    :param s: np.array of sandbox
+    :param crit_pile: int critical height of sand piles
+    :param level: float percentage of lattice sites which must be critical
+    """
+
+    while (np.sum(s, dtype=np.float) / np.sum(np.full(shape=s.shape, fill_value=crit_pile), dtype=np.float)) < level:
+        m = s < crit_pile
+        s[m] = np.random.choice(np.arange(crit_pile+1), size=s[m].shape)
+
+
+### Plotting functions and classes ###
+
     
 def plot_sandbox(s, total_drops, point=None, output_pdf=None):
     """
@@ -251,119 +277,145 @@ def plot_sandbox(s, total_drops, point=None, output_pdf=None):
 
 def plot_hist(data):
     """
-    Histogramms data
+    Histogramms data and bin centers
     
     :param data: np.array of data to histogram
     """
     
     data_unique, data_count = np.unique(data, return_counts=True)
-    counts, bin_edges, _ = plt.hist(data, bins=len(data_unique), alpha=0.7)
+    counts, bin_edges, _ = plt.hist(data)
     bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
-    plt.errorbar(bin_centers, counts, yerr=np.sqrt(data_count), fmt='o', label='Bin centers')
-    
-    #fit = pl.Fit(counts)
-    #cc=fit.power_law.alpha
-    #print cc
-    #def power_law(x, a, b):
-    #    return a * np.power(x, -b)
-    #p0 = (fit.power_law.sigma, cc)
-    #popt, pcov = curve_fit(power_law, bin_centers, counts, p0=p0,sigma=np.sqrt(counts), absolute_sigma=True, maxfev=5000)
-    #perr = np.sqrt(np.diag(pcov))
-    #plt.plot(bin_centers, power_law(bin_centers, *popt), ls='--', label=r'$f(x)=a\cdot x^{-b}$'+'\n\t'+r'a=$%f\pm %f$; b$=%f\pm %f$' % (popt[0], perr[0], popt[1], perr[1]))
-    plt.legend()
+    plt.plot(bin_centers, counts,'ro', label='Bin centers')
     plt.loglog()
-    plt.grid()
     plt.show()
+    
+    
+class SimulationPlotter(pg.ImageView):
+    """
+    Subclass of pyqtgraph.ImageView to plot evolution of sandpiles in sandbox
+    """
+    
+    def __init__(self, title=None, parent=None, **kwargs):
+        super(SimulationPlotter, self).__init__(parent=parent, **kwargs)
+        
+        # Set window title
+        self.setWindowTitle(title)
+        
+        # Make color map for image
+        pos = np.array([0.0, 0.25, 0.5, 0.75, 1.0])
+        color = np.array([[0, 0, 128, 255], [0, 128, 0, 255], [255, 255, 0, 255], [255, 140, 0, 255], [255, 0, 0, 255]], dtype=np.ubyte)
+        cmap = pg.ColorMap(pos, color)
+        self.setColorMap(cmap)
+        
+        # Show window
+        self.show()
+    
+    
+### Saving results functions ###
     
             
 def save_array(array, out_file):
+    """
+    Function to save a numpy array. Avoids overwriting existing arrays.
+    
+    :param array: np.array to save
+    :param out_file: str of path to output file
+    """
+    
+    # Check whether out_file is already in location
     if os.path.isfile(out_file):
         i = 0
         a, b = out_file.split('.')
         while os.path.isfile(a+str(i)+b):
             i += 1
-        out_file = a + '_%i.' % i + b
         
+        # Set new path    
+        out_file = a + '_%i.' % i + b
+    
+    # Save array to out_file
     np.save(out_file, array)
     
     
 def save_simulation(s, sim, total_drops=None, point=None, out_file=None):
+    """
+    Function to save result array of simulation.
+    
+    :param s: np.array of sandbox of simulation
+    :param sim: np.array of results of simulation
+    :param total_drops: int of total dropped grains of sand
+    :param point: tuple of point on which was dropped; if None, random
+    :param out_file: str of path to output file
+    """
+    
+    # Find output path if not given
     if out_file is None:
-
-        sim_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'simulations')
         
+        # Path where simulations are stored
+        sim_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../simulations/statistics')
+        
+        # Total drops
         td = str(total_drops) if total_drops is not None else '?'
         
+        # Check whether random drops or on point
         if point is None:
             sm = '%s_simulation_%s_drops_random.npy' % ('x'.join([str(dim) for dim in s.shape]), td)
         else:
             sm = '%s_simulation_%s_drops_at_%s.npy' % ('x'.join([str(dim) for dim in s.shape]), td, '_'.join(str(c) for c in point))
         
+        # Set new path
         out_file = os.path.join(sim_path, sm)
-        
+    
+    # Save array to out_file
     save_array(sim, out_file)
 
 
 def save_sandbox(s, total_drops=None, point=None, out_file=None):
+    """
+    Function to save critical sandbox after simulation.
+    
+    :param s: np.array of sandbox of simulation
+    :param total_drops: int of total dropped grains of sand
+    :param point: tuple of point on which was dropped; if None, random
+    :param out_file: str of path to output file
+    """
+    
+    # Find output path if not given
     if out_file is None:
-
-        sandbox_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sandboxes')
         
+        # Path where sandboxes are stored
+        sandbox_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../simulations/sandboxes')
+        
+        # Total drops
         td = str(total_drops) if total_drops is not None else '?'
         
+        # Check whether random drops or on point
         if point is None:
             sb = '%s_sandbox_%s_drops_random.npy' % ('x'.join([str(dim) for dim in s.shape]), td)
         else:
             sb = '%s_sandbox_%s_drops_at_%s.npy' % ('x'.join([str(dim) for dim in s.shape]), td, '_'.join(str(c) for c in point))
         
+        # Set new path
         out_file = os.path.join(sandbox_path, sb)
-        
+    
+    # Save array to out_file
     save_array(s, out_file)
-    
-    
-class SimulationPlotter(pg.GraphicsWindow):
-    
-    def __init__(self, parent=None):
-        super(SimulationPlotter, self).__init__(parent=parent)
-        
-        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
-        self.mainLayout = QtWidgets.QVBoxLayout()
-        self.setLayout(self.mainLayout)
 
-        self.img = pg.ImageItem(border='w')
-        
-        #pos = np.array([0.0, 0.6, 1.0])
-        #color = np.array([[25, 25, 112, 255], [173, 255, 47, 255], [255, 0, 0, 255]], dtype=np.ubyte)
-        #cmap = pg.ColorMap(pos, color)
-        #lut = cmap.getLookupTable(0.0, 1.0, 100)
-        #self.img.setLookupTable(lut)
-
-        self.hist = pg.HistogramLUTItem()#rgbHistogram=True)
-        self.hist.setImageItem(self.img)
-        self.plot = self.addPlot()
-        
-        self.plot.addItem(self.img)
-        self.addItem(self.hist)
-        
-    def plotSimulation(self, s, crit_pile, total_drops, point, result_array, avalanche):
-        self.hist.setHistogramRange(0, crit_pile)
-        do_simulation(s, crit_pile, total_drops, point, result_array, self.img, avalanche)
-        self.close()
+### Main ###
 
 
 def main():
     
-    ### Initialization simulation variables ### 
+    ### Initialization simulation variables ###
     
-    # Number of dimensions
+    # Length of sandbox; can be iterable for several simulations
+    _LEN = 100
+    
+    # Dimensions; can be iterable for several simulations
     _DIM = 2
     
-    # Length of sandbox
-    _L = 100
-    
     # Set critical sand pile height; usually equal to number of neighbours
-    _CRIT_H = 2 * _DIM
+    _CRIT_H = tuple(2 * _D for _D in _DIM) if isinstance(_DIM, Iterable) else 2 * _DIM
     
     # Number of total sand drops
     _SAND_DROPS = 100000
@@ -378,81 +430,84 @@ def main():
     _PLOT_SIM = False
     
     # Save results of simulation after simulation is done
-    _SAVE_SIMULATION = True
+    _SAVE_SIMULATION = False
     
     # Save sandbox after simulation is done
     _SAVE_SANDBOX = False
     
-    # Save runtime of simulation
-    _RUNTIME = 0
+    # Check for multiple lengths and dimensions
+    _LEN = _LEN if isinstance(_LEN, Iterable) else [_LEN]
+    _DIM = _DIM if isinstance(_DIM, Iterable) else [_DIM]
+    _CRIT_H = _CRIT_H if isinstance(_CRIT_H, Iterable) else [_CRIT_H]
     
-    # Make structured np.array to store results in
-    result_array = np.array(np.zeros(shape=_SAND_DROPS),
-                            dtype=[('relaxations', 'i4'), ('area', 'i4'),
-                                   ('total_drops', 'i4'), ('lin_size', 'f4')])
-                                   
-    # Array to record all avalanches; this array gets really large: 10 GB for 1e6 drops on a 100 x 100 sandbox; use only if enough RAM available
-    # avalanche = np.zeros(shape=(_SAND_DROPS,) + s.shape, dtype=np.bool)
-    
-    # Init sandbox
-    s = init_sandbox(_L, _DIM)
-    
-    # Fill sandbox until critical
-    fill_sandbox(s, _CRIT_H, level=0.75)
-    
-    # Capture start time of main loop
-    start = time.time()
-    
-    ### Do actual simulation ###
-    
-    # Show simulation for 2 dims via real-time plotting
-    if _PLOT_SIM and s.ndim == 2:
-        app = QtWidgets.QApplication([])
-        pg.setConfigOptions(antialias=True)
-        pg.setConfigOption('background', 'w')
-        pg.setConfigOption('foreground', 'k')
-        sim_plotter = SimulationPlotter()
-        sim_plotter.plotSimulation(s, _CRIT_H, _SAND_DROPS, _POINT, result_array, avalanche=None)
-        sim_plotter.show()
-        app.exec_()
-    
-    # Just do simulation
-    else:
-        do_simulation(s, _CRIT_H, _SAND_DROPS, _POINT, result_array, avalanche=None)
-    
-    # Capture time of simulation
-    _RUNTIME = time.time() - start
-    
-    # Remove events without avalanches
-    # avalanche = avalanche[~(avalanche == 0).all(axis=tuple(range(1, avalanche.ndim)))]
-    
-    print 'Needed %f for %i dropped grains' % (_RUNTIME, _SAND_DROPS)
-    
-    # Plot all results
-    if _PLOT_RES:
-    
-        plot_sandbox(s, _SAND_DROPS, point=_POINT)
+    # Do simulation for multiple sandbox lengths and dimensions in loops
+    for i, _D in enumerate(_DIM):    
+        for _L in _LEN:
+            
+            # Init sandbox
+            s = init_sandbox(_L, _D)
+            
+            # Fill sandbox until critical
+            #fill_sandbox(s, _CRIT_H[i], level=0.75)
         
-        # Plot all histograms
-        for field in result_array.dtype.names:
-            plot_hist(result_array[field])
-    
-    # Save the simulation results
-    if _SAVE_SIMULATION:
-        save_simulation(s, result_array, total_drops=_SAND_DROPS, point=_POINT)
-        
-    # Save the resulting sandbox
-    if _SAVE_SANDBOX:
-        save_sandbox(s, total_drops=_SAND_DROPS, point=_POINT)
-    
-    # Write timing with info to log
-    with open('timing.log', 'a') as f:
-        t = time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.gmtime())
-        msg = '%s, %i drops, %f seconds\n' % (str(s.shape), _SAND_DROPS, _RUNTIME)
-        t += ':\t'
-        f.write(t)
-        f.write(msg)
-    
+            # Make structured np.array to store results in
+            result_array = np.array(np.zeros(shape=_SAND_DROPS),
+                                    dtype=[('relaxations', 'i4'), ('area', 'i4'),
+                                           ('total_drops', 'i4'), ('lin_size', 'f4')])
+                                           
+            # Array to record all avalanches; this array gets really large: 10 GB for 1e6 drops on a 100 x 100 sandbox; use only if enough RAM available
+            # avalanche = np.zeros(shape=(_SAND_DROPS,) + s.shape, dtype=np.bool)
+            
+            # Capture start time of main loop
+            start = time.time()
+            
+            ### Do actual simulation ###
+            
+            # Show simulation for 2 dims via pyqtgraph
+            if _PLOT_SIM and s.ndim == 2:
+                app = QtWidgets.QApplication([])
+                pg.setConfigOptions(antialias=True)
+                title = '%i Drops On %s Sandbox' % (_SAND_DROPS, ' x '.join([str(dim) for dim in s.shape]))
+                sim_plotter = SimulationPlotter(title=title, view=pg.PlotItem())
+                do_simulation(s, _CRIT_H[i], _SAND_DROPS, _POINT, result_array, plot_simulation=sim_plotter, avalanche=None)
+            # Just do simulation
+            else:
+                do_simulation(s, _CRIT_H[i], _SAND_DROPS, _POINT, result_array, avalanche=None)
+            
+            # Capture time of simulation
+            _RUNTIME = time.time() - start
+            
+            # Remove events without avalanches
+            # avalanche = avalanche[~(avalanche == 0).all(axis=tuple(range(1, avalanche.ndim)))]
+            
+            logging.info('Needed %.2f seconds for %i dropped grains in %s sandbox' % (_RUNTIME, _SAND_DROPS, str(s.shape)))
+            
+            # Plot all results
+            if _PLOT_RES:
+            
+                plot_sandbox(s, _SAND_DROPS, point=_POINT)
+                
+                # Plot all histograms
+                for field in result_array.dtype.names:
+                    plot_hist(result_array[field])
+            
+            # Save the simulation results
+            if _SAVE_SIMULATION:
+                save_simulation(s, result_array, total_drops=_SAND_DROPS, point=_POINT)
+                
+            # Save the resulting sandbox
+            if _SAVE_SANDBOX:
+                save_sandbox(s, total_drops=_SAND_DROPS, point=_POINT)
+            
+            # Write timing with info to log
+            with open('timing.log', 'a') as f:
+                t = time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.gmtime())
+                msg = '%s, %i drops, %f seconds\n' % (str(s.shape), _SAND_DROPS, _RUNTIME)
+                t += ':\t'
+                f.write(t)
+                f.write(msg)
+
+
 if __name__ == "__main__":
     main()
     
