@@ -7,7 +7,6 @@ import numpy as np  # Arrays with fast, vectorized operations and flexible struc
 import matplotlib.pyplot as plt  # Plotting
 import pyqtgraph as pg  # Plotting
 
-from PyQt5 import QtWidgets, QtCore  # Plotting
 from matplotlib.backends.backend_pdf import PdfPages  # Plotting
 from scipy.spatial.distance import cdist, pdist  # Calculate distances
 from numba import njit  # Speed-up
@@ -164,8 +163,15 @@ def do_simulation(s, crit_pile, total_drops, point, result_array, plot_simulatio
     # Make look-up dict of points as keys and their neighbours as values; speed-up by a factor of 10
     neighbour_LUD = {}
     
-    # Make temporary array to store avalanche configuration in order to calculate linear size
+    # Make temporary array to store avalanche configuration in order to calculate linear size and area
     tmp_avalanche = np.zeros_like(s, dtype=np.bool)
+    
+    # Flag indicating whether or not to calculate the lin_size; large avalanches (in sandboxes > 2 dimensions, > 50 length) cause several 10 GB RAM consumption when calculating lin_size
+    lin_size_flag = True if np.power(s.shape[0], s.ndim) > 50**3 else False
+    
+    #Feedback
+    if lin_size_flag:
+        logging.info('No calculation of "lin_size" for %s sandbox. Too large.' % str(s.shape))
     
     # Timing estimate
     estimate_time = time.time()
@@ -207,7 +213,7 @@ def do_simulation(s, crit_pile, total_drops, point, result_array, plot_simulatio
             
             # Fast plotting
             if plot_simulation:
-                plot_simulation.setImage(s, levels=(0, crit_pile), autoHistogramRange=False)
+                plot_simulation.setData(s)
                 pg.QtGui.QApplication.processEvents()
         
         ### RESULTS ###        
@@ -222,7 +228,7 @@ def do_simulation(s, crit_pile, total_drops, point, result_array, plot_simulatio
         current_result['area'] = np.count_nonzero(current_avalanche)
         
         # Get the linear size of the current avalanche if there were relaxations
-        if relaxations != 0:
+        if relaxations != 0 and not lin_size_flag:
             
             # Get coordinates of avalanche sites
             coords = np.column_stack(np.where(current_avalanche))
@@ -241,7 +247,7 @@ def do_simulation(s, crit_pile, total_drops, point, result_array, plot_simulatio
         
         # Fast plotting
         if plot_simulation:
-            plot_simulation.setImage(s, levels=(0, crit_pile), autoHistogramRange=False)
+            plot_simulation.setData(s)
             pg.QtGui.QApplication.processEvents()
             
             
@@ -302,25 +308,112 @@ def plot_hist(data, title=None):
     plt.show()
     
     
-class SimulationPlotter(pg.ImageView):
+class ColorBar(pg.GraphicsWidget):
     """
-    Subclass of pyqtgraph.ImageView to plot evolution of sandpiles in sandbox
+    Adds colorscale for ImageItem
+    
+    Modified from https://gist.github.com/maedoc/b61090021d2a5161c5b9
+    """
+    def __init__(self, cmap, width, height, ticks=None, tick_labels=None, label=None):
+        pg.GraphicsWidget.__init__(self)
+
+        # handle args
+        label = label or ''
+        w, h = width, height
+        stops, colors = cmap.getStops('float')
+        smn, spp = stops.min(), stops.ptp()
+        stops = (stops - stops.min())/stops.ptp()
+        if ticks is None:
+            ticks = np.r_[0.0:1.0:5j, 1.0] * spp + smn
+        tick_labels = tick_labels or ["%0.2g" % (t,) for t in ticks]
+
+        # setup picture
+        self.pic = pg.QtGui.QPicture()
+        p = pg.QtGui.QPainter(self.pic)
+
+        # draw bar with gradient following colormap
+        p.setPen(pg.mkPen('k'))
+        grad = pg.QtGui.QLinearGradient(w/2.0, 0.0, w/2.0, h*1.0)
+        for stop, color in zip(stops, colors):
+            grad.setColorAt(1.0 - stop, pg.QtGui.QColor(*[255*c for c in color]))
+        p.setBrush(pg.QtGui.QBrush(grad))
+        p.drawRect(pg.QtCore.QRectF(0, 0, w, h))
+
+        # draw ticks & tick labels
+        mintx = 0.0
+        for tick, tick_label in zip(ticks, tick_labels):
+            y_ = (1.0 - (tick - smn)/spp) * h
+            p.drawLine(0.0, y_, -5.0, y_)
+            br = p.boundingRect(0, 0, 0, 0, pg.QtCore.Qt.AlignRight, tick_label)
+            if br.x() < mintx:
+                mintx = br.x()
+            p.drawText(br.x() - 10.0, y_ + br.height() / 4.0, tick_label)
+
+        # draw label
+        br = p.boundingRect(0, 0, 0, 0, pg.QtCore.Qt.AlignRight, label)
+        p.drawText(-br.width() / 2.0, h + br.height() + 5.0, label)
+        
+        # done
+        p.end()
+
+        # compute rect bounds for underlying mask
+        self.zone = mintx - 12.0, -15.0, br.width() - mintx, h + br.height() + 30.0
+        
+    def paint(self, p, *args):
+        # paint underlying mask
+        p.setPen(pg.QtGui.QColor(255, 255, 255, 0))
+        p.setBrush(pg.QtGui.QColor(255, 255, 255, 200))
+        p.drawRoundedRect(*(self.zone + (9.0, 9.0)))
+        
+        # paint colorbar
+        p.drawPicture(0, 0, self.pic)
+        
+    def boundingRect(self):
+        return pg.QtCore.QRectF(self.pic.boundingRect())
+    
+    
+class SimulationPlotter(pg.GraphicsWindow):
+    """
+    Subclass of pyqtgraph.GraphicsWindow to plot evolution of sandpiles in sandbox.
+    Simulation continues even after closing the plotting window.
+    
+    :param s: np.array of sandbox
+    :param crit_pile: int of critical pile height
     """
     
-    def __init__(self, title=None, parent=None, **kwargs):
+    def __init__(self, s, crit_pile, title=None, parent=None, **kwargs):
         super(SimulationPlotter, self).__init__(parent=parent, **kwargs)
         
         # Set window title
         self.setWindowTitle(title)
         
-        # Make color map for image
-        pos = np.array([0.0, 0.25, 0.5, 0.75, 1.0])
-        color = np.array([[0, 0, 128, 255], [0, 128, 0, 255], [255, 255, 0, 255], [255, 140, 0, 255], [255, 0, 0, 255]], dtype=np.ubyte)
-        cmap = pg.ColorMap(pos, color)
-        self.setColorMap(cmap)
+        # Store critical pile height
+        self.crit_pile = crit_pile
         
-        # Show window
-        self.show()
+        # Creat plot item
+        self.plot = self.addPlot()
+
+        # Make bar plot for 1 dim
+        if s.ndim == 1:
+            self.img = pg.BarGraphItem(x=np.arange(s.shape[0]), height=self.crit_pile, width=0.5)
+        # Make image for 2 dim
+        elif s.ndim == 2:
+            self.img = pg.ImageItem()
+            # make colormap
+            stops = np.linspace(0, 1, self.crit_pile + 1)
+            colors = np.array([[0.0, 0.0, 0.5, 1.0], [0.0, 0.5, 0.0, 1.0], [1.0, 1.0, 0.0, 1.0], [1.0, 0.55, 0.0, 1.0], [1.0, 0.0, 0.0, 1.0]])
+            cm = pg.ColorMap(stops, colors)
+            self.img.setLookupTable(cm.getLookupTable())
+            cb = ColorBar(cm, self.width()*0.05, self.height()*0.9, tick_labels=[str(i) for i in range(self.crit_pile + 1)])
+            self.addItem(cb)
+        # Add image to plot
+        self.plot.addItem(self.img)
+        
+    def setData(self, data):
+        if data.ndim == 1:
+            self.img.setOpts(height=data)
+        elif data.ndim == 2:
+            self.img.setImage(data, levels=(0, self.crit_pile), autoDownsample=True)        
     
     
 ### Saving results functions ###
@@ -421,10 +514,10 @@ def main():
     ### Initialization simulation variables ###
     
     # Length of sandbox; can be iterable for several simulations
-    _LEN = (20, 50, 70, 100)
+    _LEN = 1000
     
     # Dimensions; can be iterable for several simulations
-    _DIM = (1, 2, 3)
+    _DIM = 2
     
     # Set critical sand pile height; usually equal to number of neighbours
     _CRIT_H = tuple(2 * _D for _D in _DIM) if isinstance(_DIM, Iterable) else 2 * _DIM
@@ -433,19 +526,19 @@ def main():
     _SAND_DROPS = 1000000
     
     # Point to drop to in sandbox;if None, drop randomly
-    _POINT = None
+    _POINT = (499, 499)
     
     # Whether to plot results
     _PLOT_RES = False
     
     # Whether to plot the evolution of the sandbox
-    _PLOT_SIM = False
+    _PLOT_SIM = True
     
     # Save results of simulation after simulation is done
-    _SAVE_SIMULATION = True
+    _SAVE_SIMULATION = False
     
     # Save sandbox after simulation is done
-    _SAVE_SANDBOX = True
+    _SAVE_SANDBOX = False
     
     # Check for multiple lengths and dimensions
     _LEN = _LEN if isinstance(_LEN, Iterable) else [_LEN]
@@ -475,12 +568,14 @@ def main():
             
             ### Do actual simulation ###
             
-            # Show simulation for 2 dims via pyqtgraph
-            if _PLOT_SIM and s.ndim == 2:
-                app = QtWidgets.QApplication([])
+            # Show simulation for 1 or 2 dims via pyqtgraph
+            if _PLOT_SIM and s.ndim in (1, 2):
+                app = pg.QtGui.QApplication([])
                 pg.setConfigOptions(antialias=True)
+                pg.setConfigOption('background', 'w')
+                pg.setConfigOption('foreground', 'k')
                 title = '%i Drops On %s Sandbox' % (_SAND_DROPS, ' x '.join([str(dim) for dim in s.shape]))
-                sim_plotter = SimulationPlotter(title=title, view=pg.PlotItem())
+                sim_plotter = SimulationPlotter(s, _CRIT_H[i], title=title)
                 do_simulation(s, _CRIT_H[i], _SAND_DROPS, _POINT, result_array, plot_simulation=sim_plotter, avalanche=None)
             # Just do simulation
             else:

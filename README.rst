@@ -22,7 +22,7 @@ For plotting the (live) evolution of the sandpiles, these additional packages ar
 
 .. code-block:: bash
 
-   pyqtgraph pyqt5
+   pyqtgraph
 
 Simulation of 100000 dropped grains of sand into the center of a 200 x 200 sandbox
 **********************************************************************************
