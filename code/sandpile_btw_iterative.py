@@ -216,7 +216,7 @@ def do_simulation(s, crit_pile, total_drops, point, result_array, plot_simulatio
         current_result['total_drops'] += 1
         
         # Store amount of relaxations within this iteration; equivalent to avalanche duration
-        current_result['relaxations'] = relaxations
+        current_result['duration'] = relaxations
         
         # Get number of sites participating in current avalanche
         current_result['area'] = np.count_nonzero(current_avalanche)
@@ -433,19 +433,19 @@ def main():
     _SAND_DROPS = 1000000
     
     # Point to drop to in sandbox;if None, drop randomly
-    _POINT = (249, 249)
+    _POINT = None
     
     # Whether to plot results
-    _PLOT_RES = True
+    _PLOT_RES = False
     
     # Whether to plot the evolution of the sandbox
     _PLOT_SIM = False
     
     # Save results of simulation after simulation is done
-    _SAVE_SIMULATION = False
+    _SAVE_SIMULATION = True
     
     # Save sandbox after simulation is done
-    _SAVE_SANDBOX = False
+    _SAVE_SANDBOX = True
     
     # Check for multiple lengths and dimensions
     _LEN = _LEN if isinstance(_LEN, Iterable) else [_LEN]
@@ -464,7 +464,7 @@ def main():
         
             # Make structured np.array to store results in
             result_array = np.array(np.zeros(shape=_SAND_DROPS),
-                                    dtype=[('relaxations', 'i4'), ('area', 'i4'),
+                                    dtype=[('duration', 'i4'), ('area', 'i4'),
                                            ('total_drops', 'i4'), ('lin_size', 'f4')])
                                            
             # Array to record all avalanches; this array gets really large: 10 GB for 1e6 drops on a 100 x 100 sandbox; use only if enough RAM available
@@ -494,6 +494,14 @@ def main():
             
             logging.info('Needed %.2f seconds for %i dropped grains in %s sandbox' % (_RUNTIME, _SAND_DROPS, str(s.shape)))
             
+            # Save the simulation results
+            if _SAVE_SIMULATION:
+                save_simulation(s, result_array, total_drops=_SAND_DROPS, point=_POINT)
+                
+            # Save the resulting sandbox
+            if _SAVE_SANDBOX:
+                save_sandbox(s, total_drops=_SAND_DROPS, point=_POINT)
+                
             # Plot all results
             if _PLOT_RES:
             
@@ -502,14 +510,6 @@ def main():
                 # Plot all histograms
                 for field in result_array.dtype.names:
                     plot_hist(result_array[field], title=field)
-            
-            # Save the simulation results
-            if _SAVE_SIMULATION:
-                save_simulation(s, result_array, total_drops=_SAND_DROPS, point=_POINT)
-                
-            # Save the resulting sandbox
-            if _SAVE_SANDBOX:
-                save_sandbox(s, total_drops=_SAND_DROPS, point=_POINT)
             
             # Write timing with info to log
             with open('timing.log', 'a') as f:
