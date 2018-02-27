@@ -514,31 +514,31 @@ def main():
     ### Initialization simulation variables ###
     
     # Length of sandbox; can be iterable for several simulations
-    _LEN = 1000
+    _LEN = (20, 50, 70, 100)
     
     # Dimensions; can be iterable for several simulations
-    _DIM = 2
+    _DIM = (1, 2, 3)
     
     # Set critical sand pile height; usually equal to number of neighbours
     _CRIT_H = tuple(2 * _D for _D in _DIM) if isinstance(_DIM, Iterable) else 2 * _DIM
     
     # Number of total sand drops
-    _SAND_DROPS = 1000000
+    _SAND_DROPS = 100000
     
     # Point to drop to in sandbox;if None, drop randomly
-    _POINT = (499, 499)
+    _POINT = None
     
     # Whether to plot results
     _PLOT_RES = False
     
     # Whether to plot the evolution of the sandbox
-    _PLOT_SIM = True
+    _PLOT_SIM = False
     
     # Save results of simulation after simulation is done
-    _SAVE_SIMULATION = False
+    _SAVE_SIMULATION = True
     
     # Save sandbox after simulation is done
-    _SAVE_SANDBOX = False
+    _SAVE_SANDBOX = True
     
     # Check for multiple lengths and dimensions
     _LEN = _LEN if isinstance(_LEN, Iterable) else [_LEN]
