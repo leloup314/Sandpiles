@@ -3,6 +3,7 @@ Simulation of the dynamics of sandpiles via cellular automata
 
 Implementation of the Bak-Tank-Wiesenfeld approach of cellular automata for sandpile dynamics.
 Additional implementation of a customized model. The simulations store the characteristic statistics of the sandpile dynamics such as
+
 - Avalanche time (equivalent to number of iterations/recursions)
 - Avalanche size (equivalent to area)
 - Total amount of dropped sand (including redistributions) during avalanches
