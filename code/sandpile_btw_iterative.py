@@ -79,19 +79,19 @@ def relax_pile(s, critical_point, neighbours, amount, result):
     # Get number of neighbours
     n_neighbours = len(neighbours)
     
-    # Throw as many grains away as neighbours are missing; Equivalent to letting sand fall off lattice
-    amount = int(amount * n_neighbours / (2.0 * s.ndim))
+    # Get amount of grains which will be redistributed and don't fall of the lattice by comparing number of actual neighbours to 2*dimension (number of default neighbours)
+    to_drop = int(amount * n_neighbours / (2.0 * s.ndim))
     
-    # Redistribute amount among neighbours
+    # Redistribute to_drop among neighbours
     i = 0
-    while amount:
+    while to_drop:
         n = neighbours[i % n_neighbours]
         s[n] += 1
-        amount -= 1
+        to_drop -= 1
         i += 1
         
-    # Increase total amount of dropped grains by i
-    result['total_drops'] += i
+    # Increase size of avalanche by i dropped grains
+    result['size'] += i
         
 
 def relax_sandbox(s, critical_points, amount, neighbour_LUD, result, avalanche):
@@ -218,8 +218,8 @@ def do_simulation(s, crit_pile, total_drops, point, result_array, plot_simulatio
         
         ### RESULTS ###        
                 
-        # Add initially dropped grain to total drops
-        current_result['total_drops'] += 1
+        # Add initially dropped grain to avalanche size
+        current_result['size'] += 1
         
         # Store amount of relaxations within this iteration; equivalent to avalanche duration
         current_result['duration'] = relaxations
@@ -458,6 +458,10 @@ def save_simulation(s, sim, total_drops=None, point=None, out_file=None):
         # Path where simulations are stored
         sim_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../simulations/statistics')
         
+        # If path does not exist, make it
+        if not os.path.exists(sim_path):
+            os.mkdir(sim_path)
+        
         # Total drops
         td = str(total_drops) if total_drops is not None else '?'
         
@@ -489,6 +493,10 @@ def save_sandbox(s, total_drops=None, point=None, out_file=None):
         
         # Path where sandboxes are stored
         sandbox_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../simulations/sandboxes')
+        
+        # If path does not exist, make it
+        if not os.path.exists(sandbox_path):
+            os.mkdir(sandbox_path)
         
         # Total drops
         td = str(total_drops) if total_drops is not None else '?'
@@ -553,12 +561,12 @@ def main():
             s = init_sandbox(_L, _D)
             
             # Fill sandbox until critical
-            # fill_sandbox(s, _CRIT_H[i], level=0.75)
+            fill_sandbox(s, _CRIT_H[i], level=0.75)
         
             # Make structured np.array to store results in
             result_array = np.array(np.zeros(shape=_SAND_DROPS),
                                     dtype=[('duration', 'i4'), ('area', 'i4'),
-                                           ('total_drops', 'i4'), ('lin_size', 'f4')])
+                                           ('size', 'i4'), ('lin_size', 'f4')])
                                            
             # Array to record all avalanches; this array gets really large: 10 GB for 1e6 drops on a 100 x 100 sandbox; use only if enough RAM available
             # avalanche = np.zeros(shape=(_SAND_DROPS,) + s.shape, dtype=np.bool)
