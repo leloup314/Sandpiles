@@ -251,7 +251,7 @@ def do_simulation(s, crit_pile, total_drops, point, result_array, plot_simulatio
             pg.QtGui.QApplication.processEvents()
             
             
-def fill_sandbox(s, crit_pile, level=0.8):
+def fill_sandbox(s, crit_pile, level=0.5):
     """
     Fills s with sand until a 'level' fraction of sites of the sandbox are critical.
     
@@ -281,8 +281,9 @@ def plot_sandbox(s, total_drops, point=None, output_pdf=None):
     title = '%s sandbox with %i ' % (str(s.shape), total_drops)
     title += 'randomly dropped grains' if point is None else 'grains dropped at %s' % str(point)
     plt.title(title)
-    img = plt.imshow(s, cmap='jet', vmin=0, vmax=np.amax(s)+1)  # make image with colormap BlueGreenRed
-    plt.colorbar(img)  # add colorbar
+    cmap = plt.get_cmap('jet', np.max(s)-np.min(s)+2)  # discrete colormap
+    img = plt.imshow(s, cmap=cmap, vmin=np.min(s) - 0.5, vmax=np.max(s) + 1 + 0.5)  # make image with colormap BlueGreenRed
+    plt.colorbar(img, ticks=np.arange(np.min(s), np.max(s)+2))  # add colorbar
     plt.show()
     
     if output_pdf is not None:
@@ -416,7 +417,7 @@ class SimulationPlotter(pg.GraphicsWindow):
             self.img.setImage(data, levels=(0, self.crit_pile), autoDownsample=True)        
     
     
-### Saving results functions ###
+### Saving/loading results functions ###
     
             
 def save_array(array, out_file):
@@ -512,6 +513,38 @@ def save_sandbox(s, total_drops=None, point=None, out_file=None):
     
     # Save array to out_file
     save_array(s, out_file)
+    
+    
+def get_critical_sandbox(length, dimension, path=None):
+    """
+    Method to load a previously saved, critical sandbox and return it.
+    If none is found, init a sandbox and fill it.
+    
+    :param length: int sandbox length
+    :param dimension: int sandbox dimension
+    :param path: str of custom location where sandbox files are or None; if None, look in default path
+    """
+    
+    # Path where sandboxes are stored or given path were sandboxes are
+    sandbox_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../simulations/sandboxes') if path is None else path
+    
+    # Default saving pattern which file needs to have
+    required_pattern = 'x'.join([str(dim) for dim in [length] * dimension])
+    
+    # If path does exist, loop through .npy files, if patterns match, load and return
+    if os.path.exists(sandbox_path):
+        for sandbox in os.listdir(sandbox_path):
+            if sandbox.endswith(".npy"):
+                pattern = sandbox.split('_')[0]
+                if pattern == required_pattern:
+                    logging.info('Loading critical %s sandbox from %s in %s' % (required_pattern, sandbox, sandbox_path))
+                    return np.load(os.path.join(sandbox_path, sandbox))
+    
+    # No sandboxes were found or path does not exist; init sandbox and return
+    logging.info('Initializing %s sandbox and filling up.' % required_pattern)
+    s = init_sandbox(length, dimension)
+    fill_sandbox(s, 2 * s.ndim)
+    return s
 
 
 ### Main ###
@@ -522,7 +555,7 @@ def main():
     ### Initialization simulation variables ###
     
     # Length of sandbox; can be iterable for several simulations
-    _LEN = (20, 50, 70, 100)
+    _LEN = (10, 30, 40, 60, 80, 90)
     
     # Dimensions; can be iterable for several simulations
     _DIM = (1, 2, 3)
@@ -543,7 +576,7 @@ def main():
     _PLOT_SIM = False
     
     # Save results of simulation after simulation is done
-    _SAVE_SIMULATION = True
+    _SAVE_SIMULATION = False
     
     # Save sandbox after simulation is done
     _SAVE_SANDBOX = True
@@ -557,11 +590,8 @@ def main():
     for i, _D in enumerate(_DIM):    
         for _L in _LEN:
             
-            # Init sandbox
-            s = init_sandbox(_L, _D)
-            
-            # Fill sandbox until critical
-            fill_sandbox(s, _CRIT_H[i], level=0.75)
+            # Get critical sandbox
+            s = get_critical_sandbox(_L, _D)
         
             # Make structured np.array to store results in
             result_array = np.array(np.zeros(shape=_SAND_DROPS),
@@ -607,13 +637,14 @@ def main():
                 
             # Plot all results
             if _PLOT_RES:
-            
-                plot_sandbox(s, _SAND_DROPS, point=_POINT)
+                
+                if s.ndim == 2:
+                    plot_sandbox(s, _SAND_DROPS, point=_POINT)
                 
                 # Plot all histograms
                 for field in result_array.dtype.names:
                     plot_hist(result_array[field], title=field)
-            
+                    
             # Write timing with info to log
             with open('timing.log', 'a') as f:
                 t = time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.gmtime())

@@ -30,9 +30,9 @@ Examples
 ********
 
 .. image:: _static/f1.png
-   :width: 75
+   :width: 75 %
    :align: center
 
 .. image:: _static/f2.png
-   :width: 75
+   :width: 75 %
    :align: center
