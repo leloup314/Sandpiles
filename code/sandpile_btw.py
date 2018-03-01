@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """Implementation of slightly modified, iterative Bak-Tang-Wiesenfeld approach of cellular automata for sandpile dynamics"""
 
 import os  # File saving etc.
@@ -5,7 +7,7 @@ import time  # Timing
 import logging  # User feedback
 import numpy as np  # Arrays with fast, vectorized operations and flexible structure
 import matplotlib.pyplot as plt  # Plotting
-import pyqtgraph as pg  # Plotting
+import argparse  # simulation setup file
 
 from matplotlib.backends.backend_pdf import PdfPages  # Plotting
 from scipy.spatial.distance import cdist, pdist  # Calculate distances
@@ -13,6 +15,20 @@ from numba import njit  # Speed-up
 from collections import Iterable  # Type checking
 
 logging.basicConfig(level=logging.INFO)
+
+try:
+    yaml_flag = False
+    import yaml  # simulation setup file; don't require yaml if setup is selected in script
+except ImportError:
+    yaml_flag = True
+    logging.info('Starting simulation from setup.yaml disabled. Could not import yaml.')
+    
+try:
+    pg_flag = False
+    import pyqtgraph as pg  # Plotting; don't require pg if no live plotting
+except ImportError:
+    pg_flag = True
+    logging.info('Plotting live evolution of sandpiles disabled. Could not import pyqtgraph.')
 
 
 ### Simulation functions ###
@@ -432,7 +448,7 @@ def save_array(array, out_file):
     if os.path.isfile(out_file):
         i = 0
         a, b = out_file.split('.')
-        while os.path.isfile(a+str(i)+b):
+        while os.path.isfile(a + '_%i.' % i + b):
             i += 1
         
         # Set new path    
@@ -550,36 +566,36 @@ def get_critical_sandbox(length, dimension, path=None):
 ### Main ###
 
 
-def main():
+def main(length=None, dimension=None, crit_pile=None, total_drops=None, point=None, save_sim=False, save_sbox=False, plot_sim=False, plot_res=False):
     
     ### Initialization simulation variables ###
     
     # Length of sandbox; can be iterable for several simulations
-    _LEN = (10, 30, 40, 60, 80, 90)
+    _LEN = 100 if length is None else length
     
     # Dimensions; can be iterable for several simulations
-    _DIM = (1, 2, 3)
+    _DIM = 2 if dimension is None else dimension
     
     # Set critical sand pile height; usually equal to number of neighbours
-    _CRIT_H = tuple(2 * _D for _D in _DIM) if isinstance(_DIM, Iterable) else 2 * _DIM
+    _CRIT_H = (tuple(2 * _D for _D in _DIM) if isinstance(_DIM, Iterable) else 2 * _DIM) if crit_pile is None else crit_pile
     
     # Number of total sand drops
-    _SAND_DROPS = 100000
+    _SAND_DROPS = 10000 if total_drops is None else total_drops
     
     # Point to drop to in sandbox;if None, drop randomly
-    _POINT = None
+    _POINT = point
     
     # Whether to plot results
-    _PLOT_RES = False
+    _PLOT_RES = plot_res
     
     # Whether to plot the evolution of the sandbox
-    _PLOT_SIM = False
+    _PLOT_SIM = plot_sim
     
     # Save results of simulation after simulation is done
-    _SAVE_SIMULATION = False
+    _SAVE_SIMULATION = save_sim
     
     # Save sandbox after simulation is done
-    _SAVE_SANDBOX = True
+    _SAVE_SANDBOX = save_sbox
     
     # Check for multiple lengths and dimensions
     _LEN = _LEN if isinstance(_LEN, Iterable) else [_LEN]
@@ -606,8 +622,8 @@ def main():
             
             ### Do actual simulation ###
             
-            # Show simulation for 1 or 2 dims via pyqtgraph
-            if _PLOT_SIM and s.ndim in (1, 2):
+            # Show simulation for 1 or 2 dims via pyqtgraph if pg_flag is False
+            if _PLOT_SIM and s.ndim in (1, 2) and not pg_flag:
                 app = pg.QtGui.QApplication([])
                 pg.setConfigOptions(antialias=True)
                 pg.setConfigOption('background', 'w')
@@ -615,6 +631,7 @@ def main():
                 title = '%i Drops On %s Sandbox' % (_SAND_DROPS, ' x '.join([str(dim) for dim in s.shape]))
                 sim_plotter = SimulationPlotter(s, _CRIT_H[i], title=title)
                 do_simulation(s, _CRIT_H[i], _SAND_DROPS, _POINT, result_array, plot_simulation=sim_plotter, avalanche=None)
+                app.deleteLater()  # Important for several simulations
             # Just do simulation
             else:
                 do_simulation(s, _CRIT_H[i], _SAND_DROPS, _POINT, result_array, avalanche=None)
@@ -629,11 +646,17 @@ def main():
             
             # Save the simulation results
             if _SAVE_SIMULATION:
-                save_simulation(s, result_array, total_drops=_SAND_DROPS, point=_POINT)
+                
+                out_file = _SAVE_SIMULATION if isinstance(_SAVE_SIMULATION, str) else None
+                
+                save_simulation(s, result_array, total_drops=_SAND_DROPS, point=_POINT, out_file=out_file)
                 
             # Save the resulting sandbox
             if _SAVE_SANDBOX:
-                save_sandbox(s, total_drops=_SAND_DROPS, point=_POINT)
+                
+                out_file = _SAVE_SANDBOX if isinstance(_SAVE_SANDBOX, str) else None
+                
+                save_sandbox(s, total_drops=_SAND_DROPS, point=_POINT, out_file=out_file)
                 
             # Plot all results
             if _PLOT_RES:
@@ -655,7 +678,23 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    
+    # Possibility to get simulation setup from yaml file
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-s', '--setup', help='Yaml-file with simulation setup', required=False)
+    args = vars(parser.parse_args())
+    
+    # Load simulation setup from yaml file
+    if args['setup'] and not yaml_flag:
+        with open(args['setup'], 'r') as setup:
+            simulation_setup = yaml.safe_load(setup)
+        logging.info('Starting simulation from setup file %s:%s' % (str(args['setup']), '\n\n\t' + '\n\t'.join(str(key) + ': ' + str(simulation_setup[key]) for key in simulation_setup.keys()) + '\n'))
+    # Use default values
+    else:
+        simulation_setup = {}
+    
+    # Start simulation
+    main(**simulation_setup)
     
     
     

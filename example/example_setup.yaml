@@ -1,0 +1,79 @@
+### Example setup file. Change the variables down below and execute the script like:
+### python sandpile_btw.py --setup example_setup.yaml
+### to start the simulation.
+### The simulation variables are explained down below and a description as well as possible values for them are given.
+
+### Specifiy the length of the sandbox on which the simulation is done ###
+
+# Sandbox of length 100
+length: 100
+
+# Sandboxes of several lengths. Simulation is done for each dimension for each length
+# length: [10, 30, 50]
+
+### Specifiy dimension of the sandbox on which simulation is done###
+
+# Sandbox of dimension 2
+dimension: 2
+
+# Sandboxes of several dimensions. Simulation is done for each dimension for each length
+# dimension: [1, 2]
+
+### Number of total sand grains to be dropped ###
+
+# Drop 10000 grains on sandbox
+total_drops: 10000
+
+### Critical sand pile height of the sandbox ###
+
+# This will be selected according to the dimension (crit_pile = 2 * dimension). For several dimensions d1, d2, ..., this is tuple of (2 * d1, 2 * d2, ...)
+crit_pile: null
+
+# Set a critical pile height manually. This can be done but is not forseen.
+# crit_pile: 8
+
+### Specify point on which each grain of sand from total_drops will be dropped ###
+
+# Drop on random point within the sandbox
+point: null
+
+# Drop on point (0, 0) within a 2D sandbox
+# point: [0, 0]
+
+### Whether or not to save the result of the simulation; Stored in numpy arrays with extension .npy ###
+
+# Do not store simulation results
+save_sim: false
+
+# Save in simulations/statistics/. If this location does not exists, it is created.
+# save_sim: true
+
+# Save in specified loaction and file
+# save_sim: '/path/to/location/my_simulation.npy' 
+
+### Whether or not to save the resulting, critical sandbox; Stored in numpy arrays with extension .npy ###
+
+# Do not store critical sandbox
+save_sbox: false
+
+# Save in simulations/sandboxes/. If this location does not exists, it is created.
+# save_sbox: true
+
+# Save in specified loaction and file
+# save_sbox: '/path/to/location/my_sandbox.npy' 
+
+### Whether or not to plot the results after the simulation is over ###
+
+# Do not plot results
+plot_res: false
+
+# Do not plot results
+# plot_res: true
+
+### Whether or not to plot the live evolution of the sandpile dynamics; only possible for 1 or 2 dimensions ###
+
+# Plot live evolution
+plot_sim: true
+
+# Do not plot live evolution
+# plot_sim: false
