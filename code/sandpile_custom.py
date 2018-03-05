@@ -139,26 +139,6 @@ def get_neighbouringSlopes(s, x, neighbours):
     return retSlope
 
 
-def get_unique_rows(array):
-    """
-    Returns array with removed duplicate rows.
-
-    :param array: 2-dim np.array
-    :return: 2-dim np.array with duplicate rows removed
-    """
-
-    # Perform lex sort on array
-    sorted_idx = np.lexsort(array.T)
-    sorted_array = array[sorted_idx]
-
-    # Get unique row mask
-    row_mask = np.append([True], np.any(a=np.diff(sorted_array,axis=0), axis=1))
-
-    # Return unique rows
-    return sorted_array[row_mask]
-
-
-
 def do_relaxation(s, x_0, x_array, crit_slope, open_bounds, neighbour_LUD, result, avalanche, plot_simulation=False, recLevel=0):
     """
     Performs the avalanche relaxation mechanism recursively until all slopes are non-critical anymore.
@@ -257,7 +237,6 @@ def do_relaxation(s, x_0, x_array, crit_slope, open_bounds, neighbour_LUD, resul
         avalanche[tuple(x)] = 1
 
 
-
     ###-- STATISTICS --###
     # Use current recursion depth as avalanche's time duration
     result["duration"] = recLevel
@@ -276,14 +255,31 @@ def do_relaxation(s, x_0, x_array, crit_slope, open_bounds, neighbour_LUD, resul
         plot_simulation.setData(sPrime)
         pg.QtGui.QApplication.processEvents()
 
+
     # Now after simultaneous relaxations at positions in x_array
     # relax all neighbours of actually relaxed positions in x_array simultaneously
-    x_array_neighbours = get_neighbours(x_array[relaxEvents[0]])
-    for it in relaxEvents[1:]:  #Skip first event as this is initial content of x_array_neighbours
-        x_array_neighbours = np.append(arr=x_array_neighbours, values=get_neighbours(x_array[it]), axis=0)
 
-    # Remove duplicate neighbours from x_array_neighbours
-    x_array_neighbours = get_unique_rows(x_array_neighbours)
+    # Get all nearest neighbours of point x_array[it]; either from look-up or function call
+    if tuple(x_array[relaxEvents[0]]) in neighbour_LUD:
+        x_array_neighbours = neighbour_LUD[tuple(x_array[relaxEvents[0]])]
+    else:
+        x_array_neighbours = get_neighbours(x_array[relaxEvents[0]])
+        neighbour_LUD[tuple(x_array[relaxEvents[0]])] = x_array_neighbours  # Write to look-up dict
+
+    for it in relaxEvents[1:]:  #Skip first event as this is initial content of x_array_neighbours
+
+        # Get all nearest neighbours of point x_array[it]; either from look-up or function call
+        if tuple(x_array[it]) in neighbour_LUD:
+            tmp_neighbours = neighbour_LUD[tuple(x_array[it])]
+        else:
+            tmp_neighbours = get_neighbours(x_array[it])
+            neighbour_LUD[tuple(x_array[it])] = tmp_neighbours  # Write to look-up dict
+
+        for row in tmp_neighbours:
+            if not any(np.equal(x_array_neighbours,row).all(axis=1)):    # if not in x_array_neighbours, append
+                #if row.tolist() not in x_array_neighbours.tolist():
+                x_array_neighbours = np.append(arr=x_array_neighbours, values=[row], axis=0)
+
 
     # Use sPrime as updated sandbox for next relaxation step
     returnSandbox = do_relaxation(s=sPrime, x_0=x_0, x_array=x_array_neighbours, crit_slope=crit_slope, open_bounds=open_bounds,
@@ -666,10 +662,10 @@ class SimulationPlotter(pg.GraphicsWindow):
         elif s.ndim == 2:
             self.img = pg.ImageItem()
             # make colormap
-            stops = np.linspace(0, 1, self.crit_pile)
-            colors = np.array([[0.0, 0.0, 0.5, 1.0], [0.0, 0.5, 0.0, 1.0], [1.0, 1.0, 0.0, 1.0], [1.0, 0.55, 0.0, 1.0], [1.0, 0.0, 0.0, 1.0]])
-            cm = pg.ColorMap(stops, colors)
-            self.img.setLookupTable(cm.getLookupTable(), update=True)
+#            stops = np.linspace(0, 1, self.crit_pile + 1)
+#            colors = np.array([[0.0, 0.0, 0.5, 1.0], [0.0, 0.5, 0.0, 1.0], [1.0, 1.0, 0.0, 1.0], [1.0, 0.55, 0.0, 1.0], [1.0, 0.0, 0.0, 1.0]])
+#            cm = pg.ColorMap(stops, colors)
+#            self.img.setLookupTable(cm.getLookupTable(), update=True)
 #            cb = ColorBar(cm, self.width()*0.05, self.height()*0.9, tick_labels=[str(i) for i in range(self.crit_pile + 1)])
 #            self.addItem(cb)
         # Add image to plot
@@ -679,7 +675,7 @@ class SimulationPlotter(pg.GraphicsWindow):
         if data.ndim == 1:
             self.img.setOpts(height=data)
         elif data.ndim == 2:
-            self.img.setImage(data, levels=(0, self.crit_pile), autoDownsample=True)        
+            self.img.setImage(data, autoRange=True, autoDownsample=True)        
     
     
 ### Saving/loading results functions ###
@@ -809,7 +805,7 @@ def get_critical_sandbox(length, dimension, crit_pile, open_bounds, forceCreateN
     # No sandboxes were found or path does not exist; init sandbox and return
     logging.info('Initializing %s sandbox and filling up.' % required_pattern)
     s = init_sandbox(length, dimension)
-    fill_sandbox(s, crit_pile, open_bounds, 1000, 1e-3)
+    fill_sandbox(s, crit_pile, open_bounds, 100000, 5e-5)
     return s
 
 
@@ -826,11 +822,11 @@ def main(length=None, dimension=None, crit_pile=None, total_drops=None, point=No
     # Dimensions; can be iterable for several simulations
     _DIM = 2 if dimension is None else dimension
     
-    # Set critical sand pile height; usually equal to number of neighbours
-    _CRIT_H = 5
+    # Set critical sand pile slope
+    _CRIT_H = 8
     
     # Number of total sand drops
-    _SAND_DROPS = 100000 if total_drops is None else total_drops
+    _SAND_DROPS = 1000000 if total_drops is None else total_drops
     
     # Point to drop to in sandbox;if None, drop randomly
     _POINT = point
