@@ -6,7 +6,7 @@
 ### Specifiy the length of the sandbox on which the simulation is done ###
 
 # Sandbox of length 100
-length: 100
+length: 50
 
 # Sandboxes of several lengths. Simulation is done for each dimension for each length
 # length: [10, 30, 50]
@@ -14,36 +14,36 @@ length: 100
 ### Specifiy dimension of the sandbox on which simulation is done###
 
 # Sandbox of dimension 2
-dimension: 2
+dimension: 3
 
 # Sandboxes of several dimensions. Simulation is done for each dimension for each length
 # dimension: [1, 2]
 
-### Number of total sand grains to be dropped ###
+### Number of total drives ###
 
-# Drop 10000 grains on sandbox
-total_drops: 10000
+# Amount of how many times the simulation will be driven
+total_drives: 100000
 
-### Critical sand pile height of the sandbox ###
+### Critical slope of the sandbox ###
 
-# This will be selected according to the dimension (crit_pile = 2 * dimension). For several dimensions d1, d2, ..., this is tuple of (2 * d1, 2 * d2, ...)
-crit_pile: null
+# This will be selected according to the dimension (critical_slope = 2 * dimension). For several dimensions d1, d2, ..., this is tuple of (2 * d1, 2 * d2, ...)
+critical_slope: null
 
-# Set a critical pile height manually. This can be done but is not forseen.
-# crit_pile: 8
+# Set a critical slope manually. This can be done but is not forseen.
+# critical_slope: 8
 
-### Specify point on which each grain of sand from total_drops will be dropped ###
+### Specify site on which slope of each drive of total_drives will be added ###
 
-# Drop on random point within the sandbox
-point: null
+# Drop on random site within the sandbox
+site: null
 
-# Drop on point (0, 0) within a 2D sandbox
-# point: [0, 0]
+# Drop on site (0, 0) within a 2D sandbox
+# site: [0, 0]
 
 ### Whether or not to save the result of the simulation; Stored in numpy arrays with extension .npy ###
 
 # Do not store simulation results
-save_sim: false
+save_sim: true
 
 # Save in simulations/statistics/. If this location does not exists, it is created.
 # save_sim: true
@@ -54,7 +54,7 @@ save_sim: false
 ### Whether or not to save the resulting, critical sandbox; Stored in numpy arrays with extension .npy ###
 
 # Do not store critical sandbox
-save_sbox: false
+save_sbox: true
 
 # Save in simulations/sandboxes/. If this location does not exists, it is created.
 # save_sbox: true
@@ -73,7 +73,7 @@ plot_res: false
 ### Whether or not to plot the live evolution of the sandpile dynamics; only possible for 1 or 2 dimensions ###
 
 # Plot live evolution
-plot_sim: true
+# plot_sim: true
 
 # Do not plot live evolution
-# plot_sim: false
+plot_sim: false

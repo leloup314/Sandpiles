@@ -5,7 +5,7 @@ Implementation of the Bak-Tang-Wiesenfeld approach of cellular automata for sand
 Additional implementation of a customized model. The simulations store the characteristic statistics of the sandpile dynamics such as
 
 - Avalanche duration (equivalent to number of iterations/recursions)
-- Avalanche size (equivalent to amount of drops and redistributions during avalanche)
+- Avalanche size (equivalent to amount of topplings during avalanche)
 - Avalanche area (equivalent to number of lattice sites participating in avalanche)
 - Avalanche's linear size (equivalent to maximum distance in between two sites in an avalanche)
 
