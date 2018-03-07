@@ -15,6 +15,7 @@ from scipy.spatial.distance import cdist, pdist  # Calculate distances
 from numba import njit  # Speed-up
 from collections import Iterable  # Type checking
 from plot_utils import plot_hist, plot_sandbox  # plotting
+from tools import save_simulation, save_sandbox
 
 logging.basicConfig(level=logging.INFO)
 
@@ -403,106 +404,6 @@ def get_critical_sandbox(length, dimension, model, force_new=False, path=None):
     s = init_sandbox(length, dimension)
     make_critical(s, 2 * s.ndim)
     return s
-    
-    
-### Saving/loading results functions ###
-    
-            
-def save_array(array, out_file):
-    """
-    Function to save a numpy array. Avoids overwriting existing arrays.
-    
-    :param array: np.array to save
-    :param out_file: str of absolute path to output file
-    """
-    
-    # Check whether out_file is already in location
-    if os.path.isfile(out_file):
-        i = 0
-        a, b = out_file.split('.')
-        while os.path.isfile(a + '_%i.' % i + b):
-            i += 1
-        
-        # Set new path    
-        out_file = a + '_%i.' % i + b
-    
-    # Save array to out_file
-    np.save(out_file, array)
-    
-    
-def save_simulation(s, sim, model, total_drives=None, site=None, out_file=None):
-    """
-    Function to save result array of simulation.
-    
-    :param s: np.array of sandbox of simulation
-    :param sim: np.array of results of simulation
-    :param model: str either 'btw' or 'custom'
-    :param total_drives: int of total drives
-    :param site: tuple of coordinates of site to which slope was added; if None, random
-    :param out_file: str of absolute path to output file
-    """
-    
-    # Find output path if not given
-    if out_file is None:
-        
-        # Path where simulations are stored
-        sim_path = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../simulations/statistics'))
-        
-        # If path does not exist, make it
-        if not os.path.exists(sim_path):
-            os.mkdir(sim_path)
-        
-        # Total drops
-        td = str(total_drives) if total_drives is not None else '?'
-        
-        # Check whether random drops or on site
-        if site is None:
-            sm = '%s_simulation_%s_drives_random_%s.npy' % ('x'.join([str(dim) for dim in s.shape]), td, model)
-        else:
-            sm = '%s_simulation_%s_drives_at_%s_%s.npy' % ('x'.join([str(dim) for dim in s.shape]), td, '_'.join(str(c) for c in site), model)
-        
-        # Set new path
-        out_file = os.path.join(sim_path, sm)
-    
-    # Save array to out_file
-    save_array(sim, out_file)
-
-
-def save_sandbox(s, model, total_drives=None, site=None, out_file=None):
-    """
-    Function to save critical sandbox after simulation.
-    
-    :param s: np.array of sandbox of simulation
-    :param model: str either 'btw' or 'custom'
-    :param total_drives: int of total dropped grains of sand
-    :param site: tuple of coordinates of site to which slope was added; if None, random
-    :param out_file: str of absolute path to output file
-    """
-    
-    # Find output path if not given
-    if out_file is None:
-        
-        # Path where sandboxes are stored
-        sandbox_path = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../simulations/sandboxes'))
-        
-        # If path does not exist, make it
-        if not os.path.exists(sandbox_path):
-            os.mkdir(sandbox_path)
-        
-        # Total drops
-        td = str(total_drives) if total_drives is not None else '?'
-        
-        # Check whether random drops or on site
-        if site is None:
-            sb = '%s_sandbox_%s_drives_random_%s.npy' % ('x'.join([str(dim) for dim in s.shape]), td, model)
-        else:
-            sb = '%s_sandbox_%s_drives_at_%s_%s.npy' % ('x'.join([str(dim) for dim in s.shape]), td, '_'.join(str(c) for c in site), model)
-        
-        # Set new path
-        out_file = os.path.join(sandbox_path, sb)
-    
-    # Save array to out_file
-    save_array(s, out_file)
 
 
 ### Main ###
@@ -571,8 +472,8 @@ def main(length=None, dimension=None, critical_slope=None, total_drives=None, si
                 pg.setConfigOptions(antialias=True)
                 pg.setConfigOption('background', 'w')
                 pg.setConfigOption('foreground', 'k')
-                title = '%i Drops On %s Sandbox' % (_TOTAL_DRIVES, ' x '.join([str(dim) for dim in s.shape]))
-                sim_plotter = SimulationPlotter(s, _CRIT_S[i], title=title)
+                title = '%i Drives In %s Sandbox' % (_TOTAL_DRIVES, ' x '.join([str(dim) for dim in s.shape]))
+                sim_plotter = SimulationPlotter(s, _MODEL, _CRIT_S[i], title=title)
                 do_simulation(s, _CRIT_S[i], _TOTAL_DRIVES, _SITE, result_array, plot_simulation=sim_plotter, avalanche=None)
                 app.deleteLater()  # Important for several simulations
             # Just do simulation
@@ -585,7 +486,7 @@ def main(length=None, dimension=None, critical_slope=None, total_drives=None, si
             # Remove events without avalanches
             # avalanche = avalanche[~(avalanche == 0).all(axis=tuple(range(1, avalanche.ndim)))]
             
-            logging.info('Needed %.2f seconds for %i dropped grains in %s sandbox' % (_RUNTIME, _TOTAL_DRIVES, str(s.shape)))
+            logging.info('Needed %.2f seconds for %i drives in %s sandbox' % (_RUNTIME, _TOTAL_DRIVES, str(s.shape)))
             
             # Save the simulation results
             if _SAVE_SIMULATION:
@@ -609,12 +510,12 @@ def main(length=None, dimension=None, critical_slope=None, total_drives=None, si
                 
                 # Plot all histograms
                 for field in result_array.dtype.names:
-                    plot_hist(result_array[field], title=field)
+                    plot_hist(result_array[field], field, binning=False, title=None)
                     
             # Write timing with info to log
             with open('timing.log', 'a') as f:
                 t = time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.gmtime())
-                msg = '%s, %i drops, %f seconds\n' % (str(s.shape), _TOTAL_DRIVES, _RUNTIME)
+                msg = '%s, %i drives, %f seconds\n' % (str(s.shape), _TOTAL_DRIVES, _RUNTIME)
                 t += ':\t'
                 f.write(t)
                 f.write(msg)

@@ -6,7 +6,7 @@
 ### Specifiy the length of the sandbox on which the simulation is done ###
 
 # Sandbox of length 100
-length: 50
+length: 100
 
 # Sandboxes of several lengths. Simulation is done for each dimension for each length
 # length: [10, 30, 50]
@@ -14,7 +14,7 @@ length: 50
 ### Specifiy dimension of the sandbox on which simulation is done###
 
 # Sandbox of dimension 2
-dimension: 3
+dimension: 2
 
 # Sandboxes of several dimensions. Simulation is done for each dimension for each length
 # dimension: [1, 2]
@@ -22,7 +22,7 @@ dimension: 3
 ### Number of total drives ###
 
 # Amount of how many times the simulation will be driven
-total_drives: 100000
+total_drives: 10000
 
 ### Critical slope of the sandbox ###
 
@@ -43,7 +43,7 @@ site: null
 ### Whether or not to save the result of the simulation; Stored in numpy arrays with extension .npy ###
 
 # Do not store simulation results
-save_sim: true
+save_sim: false
 
 # Save in simulations/statistics/. If this location does not exists, it is created.
 # save_sim: true
@@ -54,7 +54,7 @@ save_sim: true
 ### Whether or not to save the resulting, critical sandbox; Stored in numpy arrays with extension .npy ###
 
 # Do not store critical sandbox
-save_sbox: true
+save_sbox: false
 
 # Save in simulations/sandboxes/. If this location does not exists, it is created.
 # save_sbox: true
