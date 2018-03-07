@@ -7,5 +7,4 @@
 # LaTeX
 report/*
 !report/*.tex
-!report/*.bib
-report/reportNotes.bib
+!report/gfx/*

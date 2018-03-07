@@ -1,21 +1,22 @@
-\documentclass[a4paper,twocolumn]{revtex4-1}
+\documentclass[a4paper,twocolumn,pre,floats,aps]{revtex4-1}
 
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage[ngerman]{babel}
+\usepackage[english]{babel}
 
-%\usepackage{graphicx}
-%\graphicspath{{./gfx/}}
+\usepackage{graphicx}
+\graphicspath{{./gfx/}}
 
 \usepackage{amsmath}
 \usepackage{amssymb}
-\usepackage{xfrac}
+%\usepackage{xfrac}
 
-\usepackage{siunitx}
-\sisetup{input-decimal-markers={.},output-decimal-marker={.},group-separator={},scientific-notation=fixed,fixed-exponent=0,separate-uncertainty=true}
+%\usepackage{siunitx}
+%\sisetup{input-decimal-markers={.},output-decimal-marker={.},group-separator={},scientific-notation=fixed,fixed-exponent=0,separate-uncertainty=true}
+
+%\usepackage{bm}
 
 \usepackage{hyperref}
-
 \usepackage{csquotes}
 
 %\usepackage{subcaption}
@@ -23,41 +24,61 @@
 
 \begin{document}
 
-\title{Sandpiles}
-\author{Markus Frohne}
-\email{\dots}
-\author{Pascal Wolf}
-\email{\dots}
+\title{Self-organized criticality in cellular automata for sandpiles}
+
+\author{M. Frohne}
+\affiliation{Helmholtz-Institut für Strahlen- und Kernphysik, Universität Bonn,
+             Nussallee 14-16, D-53115 Bonn}
+\author{P. Wolf}
+\affiliation{Helmholtz-Institut für Strahlen- und Kernphysik, Universität Bonn,
+             Nussallee 14-16, D-53115 Bonn}
+
+\date{\today}
 
 
-\begin{abstract}
-\dots
-\end{abstract}
-
-\maketitle
+\input{report_content.tex}
 
 
-\section{Introduction}
-\dots
+\begin{thebibliography}{99}
 
+%\bibitem{FHD}R. E. Rosensweig, {\it Ferrohydrodynamics} (Cambridge
+%University Press, Cambridge, 1985), and references therein.
+%
+%\bibitem{Jackson}D. P. Jackson, R. E. Goldstein and A. O. Cebers,
+%Phys. Rev. E {\bf 50}, 298 (1994).
+%
+%\bibitem{Comment} Here is an example of a comment that you might need
+%to include.  This is usually a comment about something very subtle
+%that might be important to include but generally gets in the way of
+%the regular text.
 
-\section{\dots}
-\dots
-\begin{figure}[htb]
-    \centering
-%    \includegraphics[width=\linewidth]{}
-    \caption{}
-%    \label{fig:}
-\end{figure}
+%@article{BakTangWiesenfeld,
+%    title = {Self-Organized Criticality: An Explanation of 1/$f$ Noise},
+%    author ={P. Bak and C. Tang and K. Wiesenfeld},
+%    year = {1987},
+%    journal = {Physical Review Letters},
+%    number = {4},
+%    volume = {59}
+%}
+%
+%@unpublished{CPproject,
+%    title = {Projects for Computational Physics},
+%    subtitle = {Cellular automata for sandpiles},
+%    author = {M. Petschlies and C. Urbach},
+%    year = {2018}
+%}
+%
+%@article{Weissman:1988zz,
+%    author = {Weissman, M. B.},
+%    title = {1f noise and other slow, nonexponential kinetics in condensed matter},
+%    journal = {Rev. Mod. Phys.},
+%    volume = {60},
+%    year = {1988},
+%    pages = {537-571},
+%    doi = {10.1103/RevModPhys.60.537},
+%    SLACcitation = {%%CITATION = RMPHA,60,537;%%}
+%}
 
-
-\section{Conclusion}
-\dots
-
-
-\begin{thebibliography}{}
-    \bibitem{}
-    Author, \emph{Title} (Date)
 \end{thebibliography}
 
 \end{document}
