@@ -14,6 +14,9 @@ from scipy.spatial.distance import cdist, pdist  # Calculate distances
 from numba import njit  # Speed-up
 from collections import Iterable  # Type checking
 
+import sys
+sys.setrecursionlimit(1000)
+
 logging.basicConfig(level=logging.INFO)
 
 try:
@@ -34,7 +37,7 @@ except ImportError:
 ### Simulation functions ###
 
 
-def init_sandbox(n, dim, state=None, crit_pile=4):
+def init_sandbox(n, dim, state='fill', crit_slope=5):
     """
     Initialises a square NxN sandbox lattice on which the simulation is done.
 
@@ -45,7 +48,9 @@ def init_sandbox(n, dim, state=None, crit_pile=4):
 
     """
 
-    if state == 'one':
+    if state == 'fill':
+        res = n*crit_slope*np.ones(shape=(n, ) * dim, dtype=np.int16)
+    elif state == 'one':
         res = np.ones(shape=(n, ) * dim, dtype=np.int16)
     elif state == 'crit':
         res = np.random.choice([crit_pile-1, crit_pile], shape=(n, ) * dim, dtype=np.int16)
@@ -139,7 +144,7 @@ def get_neighbouringSlopes(s, x, neighbours):
     return retSlope
 
 
-def do_relaxation(s, x_0, x_array, crit_slope, open_bounds, neighbour_LUD, result, avalanche, plot_simulation=False, recLevel=0):
+def do_relaxation(s, x_0, x_array, crit_slope, open_bounds, neighbour_LUD, result, avalanche, plot_simulation=False):
     """
     Performs the avalanche relaxation mechanism recursively until all slopes are non-critical anymore.
 
@@ -155,135 +160,143 @@ def do_relaxation(s, x_0, x_array, crit_slope, open_bounds, neighbour_LUD, resul
     # Dimension of the sandbox
     dim = s.ndim
 
-    # Reshape x_array if it is only a single position, such that the loop below can be used in all cases
-    if x_array.ndim == 1:
-        x_array = x_array.reshape((1,x_array.shape[0]))
-
-    # To emulate simultaneous relaxations, do them successively for each member of x_array
-    # (each position) using the same sandbox s=const for slope determination.
-    # The simultaneous relaxations are meanwhile accumulated in sandbox sPrime
-    sPrime = np.copy(s)
-
-    # Note at which positions/iterations relaxation events happen
-    relaxEvents = np.array([], dtype=np.uint32)
-
-    # Loop through positions in x_array
-    for it in range(x_array.shape[0]):
-        x = x_array[it]
-
-        # Dont try to relax if x is off-boundary
-        if off_boundary(s, x):
-            continue
-
-        # If x is right at an 'open edge', just drop excess grains from sandpile for too large s[x]
-        if (s[tuple(x)] >= crit_slope) and at_open_edge(s, x, open_bounds):
-            sPrime[tuple(x)] = 0
-            relaxEvents = np.append(arr=relaxEvents, values=[it], axis=0)   # Bookkeeping (see below)
-            continue
-
-        ###-- Choose random nearest neighbour with maximum (and critical) slope. --###
-        ###-- If no slope is critical, do nothing further.                       --###
-
-        # Get all nearest neighbours of current point x; either from look-up or function call
-        if tuple(x) in neighbour_LUD:
-            neighbours = neighbour_LUD[tuple(x)]
-        else:
-            neighbours = get_neighbours(x)
-            neighbour_LUD[tuple(x)] = neighbours   # Write to look-up dict
-
-        # Determine all slopes between x and neighbours
-        slopes = get_neighbouringSlopes(s, x, neighbours)
-
-        # Find neightbours with at least critical slope and list their corresponding slopes
-        crit_slopes_idx = np.where(slopes >= crit_slope)[0]
-        crit_slopes = slopes[crit_slopes_idx]
-        crit_neighbours = neighbours[crit_slopes_idx]
-
-        # Continue loop if no slope is critical at position x
-        if len(crit_slopes_idx) == 0:
-            continue
-
-        # Bookkeeping: actual relaxation event will happen at this recursion level
-        relaxEvents = np.append(arr=relaxEvents, values=[it], axis=0)
-
-        # Sort slope values (descending order) and corresponding indices
-        sort_idx = np.argsort(crit_slopes)[::-1]
-        crit_slopes_sorted = crit_slopes[sort_idx]
-        crit_neighbours_sorted = crit_neighbours[sort_idx]
-
-        # Find neighbours with maximum slope
-        current_max_slope = crit_slopes_sorted[0]
-        max_slopes_idx = np.where(crit_slopes_sorted == current_max_slope)[0]
-
-        ##-- Drop grains to all maximum-slope neighbours --##
-        ##-- until slope becomes zero.                   --##
-
-        N = len(max_slopes_idx)
-        toDrop = int(np.floor(current_max_slope * (N / (N + 1.0))))
-
-        sPrime[tuple(x)] -= toDrop
-
-        offset = np.random.randint(N)   # Randomly select initial drop neighbour
-        for i in range(toDrop):
-            tIdx = max_slopes_idx[(i+offset) % N]
-            sPrime[tuple(crit_neighbours_sorted[tIdx])] += 1
-
-        # Record drops on all sites as part of the avalanche
-        for index in max_slopes_idx:
-            drop_site = tuple(crit_neighbours_sorted[index])
-            # drop_site took part in the avalanche; set to 1
-            avalanche[drop_site] = 1
-        # Point x took part in the avalanche, too; set to 1
-        avalanche[tuple(x)] = 1
+    # Initialize avalanche's time duration
+    result["duration"] = -1
 
 
-    ###-- STATISTICS --###
-    # Use current recursion depth as avalanche's time duration
-    result["duration"] = recLevel
+    while True:
 
-    # Increase avalanche size about the number of additional relaxation events
-    result["size"] += len(relaxEvents)
-    ###----------------###
+        # Reshape x_array if it is only a single position, such that the loop below can be used in all cases
+        if x_array.ndim == 1:
+            x_array = x_array.reshape((1,x_array.shape[0]))
 
 
-    # If no relaxation actually happened the avalanche stops at this recursion level
-    if len(relaxEvents) == 0:
-        return s
-
-    # Fast plotting
-    if plot_simulation:
-        plot_simulation.setData(sPrime)
-        pg.QtGui.QApplication.processEvents()
+        # Debugging
+        ##print("-- Level: "+str(result["duration"])+" --| -- relaxSites: "+str(x_array.shape[0]))
 
 
-    # Now after simultaneous relaxations at positions in x_array
-    # relax all neighbours of actually relaxed positions in x_array simultaneously
+        # To emulate simultaneous relaxations, do them successively for each member of x_array
+        # (each position) using the same sandbox s=const for slope determination.
+        # The simultaneous relaxations are meanwhile accumulated in sandbox sPrime
+        sPrime = np.copy(s)
 
-    # Get all nearest neighbours of point x_array[it]; either from look-up or function call
-    if tuple(x_array[relaxEvents[0]]) in neighbour_LUD:
-        x_array_neighbours = neighbour_LUD[tuple(x_array[relaxEvents[0]])]
-    else:
-        x_array_neighbours = get_neighbours(x_array[relaxEvents[0]])
-        neighbour_LUD[tuple(x_array[relaxEvents[0]])] = x_array_neighbours  # Write to look-up dict
+        # Note at which positions/iterations relaxation events happen
+        relaxEvents = np.array([], dtype=np.uint32)
 
-    for it in relaxEvents[1:]:  #Skip first event as this is initial content of x_array_neighbours
+        # Loop through positions in x_array
+        for it in range(x_array.shape[0]):
+            x = x_array[it]
+
+            # Dont try to relax if x is off-boundary
+            if off_boundary(s, x):
+                continue
+
+            # If x is right at an 'open edge', just drop excess grains from sandpile for too large s[x]
+            if (s[tuple(x)] >= crit_slope) and at_open_edge(s, x, open_bounds):
+                sPrime[tuple(x)] = 0
+                relaxEvents = np.append(arr=relaxEvents, values=[it], axis=0)   # Bookkeeping (see below)
+                continue
+
+            ###-- Choose random nearest neighbour with maximum (and critical) slope. --###
+            ###-- If no slope is critical, do nothing further.                       --###
+
+            # Get all nearest neighbours of current point x; either from look-up or function call
+            if tuple(x) in neighbour_LUD:
+                neighbours = neighbour_LUD[tuple(x)]
+            else:
+                neighbours = get_neighbours(x)
+                neighbour_LUD[tuple(x)] = neighbours   # Write to look-up dict
+
+            # Determine all slopes between x and neighbours
+            slopes = get_neighbouringSlopes(s, x, neighbours)
+
+            # Find neightbours with at least critical slope and list their corresponding slopes
+            crit_slopes_idx = np.where(slopes >= crit_slope)[0]
+            crit_slopes = slopes[crit_slopes_idx]
+            crit_neighbours = neighbours[crit_slopes_idx]
+
+            # Continue loop if no slope is critical at position x
+            if len(crit_slopes_idx) == 0:
+                continue
+
+            # Bookkeeping: actual relaxation event will happen at this recursion level
+            relaxEvents = np.append(arr=relaxEvents, values=[it], axis=0)
+
+            # Find neighbours with maximum slope
+            current_max_slope = np.max(crit_slopes)
+
+            ##-- Collapse excess grain stack (excess with respect to neighbour with least --##
+            ##-- grains) and redistribute to all critical neighbours, i.e. drop at max    --##
+            ##-- current_max_slope grains as long as there are still critical neighbours. --##
+
+            N = len(crit_neighbours)
+            max_to_drop = current_max_slope
+
+            offset = 0#np.random.randint(N)   # Randomly select initial drop neighbour
+            for i in range(max_to_drop):
+                tIdx = (i+offset) % N
+                drop_site = tuple(crit_neighbours[tIdx])
+
+                if (sPrime[tuple(x)] - sPrime[drop_site]) <= 0:
+                    continue
+
+                sPrime[drop_site] += 1
+                sPrime[tuple(x)] -= 1
+
+                # Record drop as part of the avalanche
+                avalanche[drop_site] = 1
+
+            # Point x took part in the avalanche, too; set to 1
+            avalanche[tuple(x)] = 1
+
+
+
+        ###-- STATISTICS --###
+        # Increase avalanche's time duration about 1
+        result["duration"] += 1
+
+        # Increase avalanche size about the number of additional relaxation events
+        result["size"] += len(relaxEvents)
+        ###----------------###
+
+
+        # If no relaxation actually happened the avalanche stops at this recursion level
+        if len(relaxEvents) == 0:
+            return s
+
+        # Fast plotting
+        if plot_simulation:
+            plot_simulation.setData(sPrime)
+            pg.QtGui.QApplication.processEvents()
+
+
+        # Now after simultaneous relaxations at positions in x_array
+        # relax all neighbours of actually relaxed positions in x_array simultaneously
 
         # Get all nearest neighbours of point x_array[it]; either from look-up or function call
-        if tuple(x_array[it]) in neighbour_LUD:
-            tmp_neighbours = neighbour_LUD[tuple(x_array[it])]
+        if tuple(x_array[relaxEvents[0]]) in neighbour_LUD:
+            x_array_neighbours = neighbour_LUD[tuple(x_array[relaxEvents[0]])]
         else:
-            tmp_neighbours = get_neighbours(x_array[it])
-            neighbour_LUD[tuple(x_array[it])] = tmp_neighbours  # Write to look-up dict
+            x_array_neighbours = get_neighbours(x_array[relaxEvents[0]])
+            neighbour_LUD[tuple(x_array[relaxEvents[0]])] = x_array_neighbours  # Write to look-up dict
 
-        for row in tmp_neighbours:
-            if not any(np.equal(x_array_neighbours,row).all(axis=1)):    # if not in x_array_neighbours, append
-                #if row.tolist() not in x_array_neighbours.tolist():
-                x_array_neighbours = np.append(arr=x_array_neighbours, values=[row], axis=0)
+        for it in relaxEvents[1:]:  #Skip first event as this is initial content of x_array_neighbours
 
+            # Get all nearest neighbours of point x_array[it]; either from look-up or function call
+            if tuple(x_array[it]) in neighbour_LUD:
+                tmp_neighbours = neighbour_LUD[tuple(x_array[it])]
+            else:
+                tmp_neighbours = get_neighbours(x_array[it])
+                neighbour_LUD[tuple(x_array[it])] = tmp_neighbours  # Write to look-up dict
 
-    # Use sPrime as updated sandbox for next relaxation step
-    returnSandbox = do_relaxation(s=sPrime, x_0=x_0, x_array=x_array_neighbours, crit_slope=crit_slope, open_bounds=open_bounds,
-                                  neighbour_LUD=neighbour_LUD, result=result, avalanche=avalanche, plot_simulation=plot_simulation, recLevel=recLevel+1)
+            for row in tmp_neighbours:
+                if not any(np.equal(x_array_neighbours,row).all(axis=1)):    # if not in x_array_neighbours, append
+                    #if row.tolist() not in x_array_neighbours.tolist():
+                    x_array_neighbours = np.append(arr=x_array_neighbours, values=[row], axis=0)
+
+        # Use sPrime as updated sandbox for next relaxation step
+        s = np.copy(sPrime)
+        x_array = np.copy(x_array_neighbours)
 
     return returnSandbox
 
@@ -400,7 +413,6 @@ def do_simulation(s, crit_pile, total_drops, point, result_array, open_bounds, p
             plot_simulation.setData(s)
             pg.QtGui.QApplication.processEvents()
 
-
 def get_criticality(sandbox, crit_slope):
     """
     Returns criticality parameter based on slope distribution
@@ -418,6 +430,8 @@ def get_criticality(sandbox, crit_slope):
 
         # Shift i-th axis about 1
         sShift = np.roll(sandbox, 1, axis=i)
+        # Shift i-th axis about -1
+        sShift2 = np.roll(sandbox, -1, axis=i)
 
         # Sum absolute slope values at each point (except at the 'lower' edge (no periodic boundaries!))
         it = np.nditer(sShift, flags=['multi_index'])
@@ -426,61 +440,12 @@ def get_criticality(sandbox, crit_slope):
                 it.iternext()
                 continue
             slopeSum += abs((sShift - sandbox)[it.multi_index])
+            slopeSum += abs((sShift2 - sandbox)[it.multi_index])
             it.iternext()
 
     critParm = float(slopeSum) / sandbox.size / (crit_slope - 1)
 
     return critParm
-
-
-def fill_sandbox(s, crit_pile, open_bounds, max_iterations=1000000, saturation_parameter=1e-3):
-    """
-    Fills s with sand until a 'level' fraction of sites of the sandbox are critical.
-    
-    :param s: np.array of sandbox
-    :param crit_pile: int critical height of sand piles
-    :param level: float percentage of lattice sites which must be critical
-    """
-
-    # Create random critical sandpile
-    critEvolution = {}
-    N = 1000
-    for i in xrange(max_iterations):    # Loop until sandpile is critical or
-                                        # maximum number of iterations reached
-
-        # Check criticality every N-th iteration
-        if i % N == 0:
-            critEvolution[i] = get_criticality(sandbox=s, crit_slope=crit_pile)
-
-            # Stop loop when criticality parameter saturates
-            if i > 0:
-                tDiff = (critEvolution[i] - critEvolution[i-N]) / N
-                print("i="+str(i)+", criticality parameter="+str(critEvolution[i])+", delta(crit. parm.)[i,i-N]="+str(tDiff))
-                if tDiff < saturation_parameter:
-                    print("Done. Sandpile critical at i=" + str(i))
-                    break
-
-        # Make random point
-        point = np.random.randint(low=0, high=np.amin(s.shape), size=s.ndim)
-
-        # Add sand at random position
-        add_sand(s=s, point=point, amount=1)
-    
-        # Make structured np.array to store results in
-        result_array = np.array(np.zeros(shape=1),
-                                dtype=[('duration', 'i4'), ('area', 'i4'),
-                                       ('size', 'i4'), ('lin_size', 'f4')])
-        # Extract result array for current iteration
-        current_result = result_array[0]
-        # Make look-up dict of points as keys and their neighbours as values; speed-up by a factor of 10
-        neighbour_LUD = {}
-        # Make temporary array to store avalanche configuration in order to calculate linear size and area
-        tmp_avalanche = np.zeros_like(s, dtype=np.bool)
-
-        # Relax the sandbox simultaneously
-        do_relaxation(s=s, x_0=point, x_array=point, crit_slope=crit_pile, open_bounds=open_bounds, neighbour_LUD=neighbour_LUD, result=current_result,
-                      avalanche=tmp_avalanche)
-
 
 
 ### Plotting functions and classes ###
@@ -774,7 +739,59 @@ def save_sandbox(s, total_drops=None, point=None, out_file=None):
     
     # Save array to out_file
     save_array(s, out_file)
+
+
+def fill_sandbox(s, crit_pile, open_bounds, max_iterations=1000000, saturation_parameter=1e-5):
+    """
+    Fills s with sand until a 'level' fraction of sites of the sandbox are critical.
     
+    :param s: np.array of sandbox
+    :param crit_pile: int critical height of sand piles
+    :param level: float percentage of lattice sites which must be critical
+    """
+
+    # Make structured np.array to store results in
+    result_array = np.array(np.zeros(shape=1),
+                            dtype=[('duration', 'i4'), ('area', 'i4'),
+                                   ('size', 'i4'), ('lin_size', 'f4')])
+    # Extract result array for current iteration
+    current_result = result_array[0]
+    # Make look-up dict of points as keys and their neighbours as values; speed-up by a factor of 10
+    neighbour_LUD = {}
+    # Make temporary array to store avalanche configuration in order to calculate linear size and area
+    tmp_avalanche = np.zeros_like(s, dtype=np.bool)
+
+
+    # Create random critical sandpile
+    critEvolution = {}
+    N = 2000
+    for i in xrange(max_iterations):    # Loop until sandpile is critical or
+                                        # maximum number of iterations reached
+        print(i)
+        # Check criticality every N-th iteration
+        if i % N == 0:
+            critEvolution[i] = get_criticality(sandbox=s, crit_slope=crit_pile)
+
+            # Stop loop when criticality parameter saturates
+            if i > 0:
+                tDiff = abs((critEvolution[i] - critEvolution[i-N])) / N
+                print("i="+str(i)+", criticality parameter="+str(critEvolution[i])+", delta(crit. parm.)[i,i-N]="+str(tDiff))
+                if tDiff < saturation_parameter:
+                    print("Done. Sandpile critical at i=" + str(i))
+                    break
+
+        # Make random point
+        point = np.random.randint(low=0, high=np.amin(s.shape), size=s.ndim)
+
+        # Add sand at random position
+        add_sand(s, point)
+
+        # Relax the sandbox simultaneously
+        s = do_relaxation(s=s, x_0=point, x_array=point, crit_slope=crit_pile, open_bounds=open_bounds, neighbour_LUD=neighbour_LUD, result=current_result,
+                          avalanche=tmp_avalanche)
+
+    return s
+
 
 def get_critical_sandbox(length, dimension, crit_pile, open_bounds, forceCreateNew=False, path=None):
     """
@@ -804,29 +821,35 @@ def get_critical_sandbox(length, dimension, crit_pile, open_bounds, forceCreateN
     
     # No sandboxes were found or path does not exist; init sandbox and return
     logging.info('Initializing %s sandbox and filling up.' % required_pattern)
-    s = init_sandbox(length, dimension)
-    fill_sandbox(s, crit_pile, open_bounds, 100000, 5e-5)
+
+    # If there are open bondaries, significantly increase speed of fill_sandbox(...) by starting from filled sandbox
+    init_state=None
+    if any(open_bounds):
+        init_state='fill'
+
+    s = init_sandbox(length, dimension, state=init_state, crit_slope=crit_pile)
+    s = fill_sandbox(s, crit_pile, open_bounds, max_iterations=400000, saturation_parameter=1e-6)
     return s
 
 
 ### Main ###
 
 
-def main(length=None, dimension=None, crit_pile=None, total_drops=None, point=None, save_sim=False, save_sbox=False, plot_sim=True, plot_res=False):
+def main(length=None, dimension=None, crit_pile=None, total_drops=None, point=None, save_sim=False, save_sbox=False, plot_sim=False, plot_res=False):
     
     ### Initialization simulation variables ###
     
     # Length of sandbox; can be iterable for several simulations
-    _LEN = 50 if length is None else length
+    _LEN = 30 if length is None else length
     
     # Dimensions; can be iterable for several simulations
     _DIM = 2 if dimension is None else dimension
     
     # Set critical sand pile slope
-    _CRIT_H = 8
+    _CRIT_H = 5
     
     # Number of total sand drops
-    _SAND_DROPS = 1000000 if total_drops is None else total_drops
+    _SAND_DROPS = 100000 if total_drops is None else total_drops
     
     # Point to drop to in sandbox;if None, drop randomly
     _POINT = point
@@ -853,12 +876,15 @@ def main(length=None, dimension=None, crit_pile=None, total_drops=None, point=No
         for _L in _LEN:
 
             # Define boundary conditions
-            open_boundaries=(True,)*2*_D    # Open boundary conditions at all lower/upper edges
-            #open_boundaries=(False,)*2*_D  # Closed boundary conditions at all lower/upper edges
+            #open_boundaries=(True,)*2*_D    # Open boundary conditions at all lower/upper edges
+            open_boundaries=(False,)*2*_D  # Closed boundary conditions at all lower/upper edges
             if _D == 2:
                 #open_boundaries=(False,False,False,True)    # 2-dim model, one open boundary
                 #open_boundaries=(True,False,True,True)      # 2-dim model, one closed boundary
-                #open_boundaries=(True,False,False,True)     # 2-dim model, two closed boundaries
+                open_boundaries=(False,True,True,False)     # 2-dim model, two closed boundaries
+                pass
+            if _D == 3:
+                open_boundaries=(False,True,True,False,False,True)  # 3-dim model, three closed boundaries
                 pass
 
 
