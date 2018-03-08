@@ -14,9 +14,6 @@ from scipy.spatial.distance import cdist, pdist  # Calculate distances
 from numba import njit  # Speed-up
 from collections import Iterable  # Type checking
 
-import sys
-sys.setrecursionlimit(1000)
-
 logging.basicConfig(level=logging.INFO)
 
 try:
@@ -835,7 +832,7 @@ def get_critical_sandbox(length, dimension, crit_pile, open_bounds, forceCreateN
 ### Main ###
 
 
-def main(length=None, dimension=None, crit_pile=None, total_drops=None, point=None, save_sim=False, save_sbox=False, plot_sim=False, plot_res=False):
+def main(length=None, dimension=None, crit_pile=None, total_drops=None, point=None, save_sim=False, save_sbox=False, plot_sim=True, plot_res=False):
     
     ### Initialization simulation variables ###
     
