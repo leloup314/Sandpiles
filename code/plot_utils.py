@@ -233,7 +233,7 @@ if not pg_flag:
                 else:
                     tick_labels = ['low'] + [' ' for _ in range(len(stops) - 2)] + ['high']               
                 # Add color bar
-                cb = ColorBar(cm, self.width()*0.05, self.height()*0.9, tick_labels=tick_labels)
+                cb = ColorBar(cm, self.width()*0.025, self.height()*0.9, tick_labels=tick_labels)
                 self.addItem(cb)
             # Add image to plot
             self.plot.addItem(self.img)

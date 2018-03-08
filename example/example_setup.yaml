@@ -22,7 +22,7 @@ dimension: 2
 ### Number of total drives ###
 
 # Amount of how many times the simulation will be driven
-total_drives: 10000
+total_drives: 100000
 
 ### Critical slope of the sandbox ###
 
