@@ -2,17 +2,17 @@ Simulation results
 ====================================
 
 This folder contains simulation results in the form of numpy arrays.
-The first number(s) gives the dimension(s), e.g.
+The prefix gives the dimension(s), the suffix indicates the model e.g.
 
 .. code-block:: bash
    
-   100_simulation_1000000_drops_random.npy
+   100_simulation_1000000_drives_random_custom.npy
 
-are results of a simulation with 1 million random drops on a 1D sandbox of length 100
+are results of a simulation of the custom model with 1 million drives on a random site on a 1D sandbox of length 100
 
 .. code-block:: bash
 
-   100x100_simulation_1000000_drops_random.npy
+   100x100_simulation_1000000_drives_random_btw.npy
 
-are results of a simulation with 1 million random drops on a 2D sandbox of length 100
+are results of a simulation of the BTW model with 1 million drives on a random site on a 2D sandbox of length 100
 
