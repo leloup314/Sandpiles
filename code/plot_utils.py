@@ -13,7 +13,50 @@ except ImportError:
     pg_flag = True
     pass
 
-    
+
+def get_2d_sandboxSlice(sandbox):
+    """
+    Returns 2-dim sub-array of sandbox for plotting purposes if dimension is larger than 2.
+
+    :param sandbox: np.array of sandbox
+    :return: 2-dim sub-array of sandbox
+    """
+
+    if sandbox.ndim <= 2:
+        return sandbox
+
+    tdSlice = np.copy(sandbox)
+    tDim = sandbox.ndim
+
+    # Select sub-array in the middle until slice has 2 dimensions
+    while tDim > 2:
+        tdSlice = tdSlice[int(np.ceil((sandbox.shape[tDim-1]-1) / 2.0))]
+        tDim -= 1
+
+    return tdSlice
+
+def get_slopeBox(sandbox):
+    """
+    Returns np.array with BTW compatible slopes
+    instead of number of grains at each position.
+
+    :param sandbox: np.array of custom model sandbox
+    :return: n.array of BTW slopes
+    """
+
+    slopebox = np.zeros_like(sandbox);
+
+    # Loop through all axes to sum up slopes in all directions
+    for i in xrange(sandbox.ndim):
+
+        # Shift i-th axis about 1
+        sShift = np.roll(sandbox, 1, axis=i)
+
+        slopebox += (sShift - sandbox)
+
+    return slopebox
+
+
 def plot_sandbox(s, total_drops, site=None, discrete=True, output_pdf=None):
     """
     Plots the configuration of s in a 2D heatmap

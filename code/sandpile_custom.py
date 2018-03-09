@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 """
-Implementation of slightly modified, iterative Bak-Tang-Wiesenfeld approach of cellular automata for sandpile dynamics.
-The lattice sites in the sandbox in the context of this model must be regarded as slopes, not actual heights of sand piles. 
+Implementation of a customized cellular automaton for sandpile dynamics.
+The lattice sites in the sandbox in the context of this model must be regarded as the actual heights of the sand pile.
 """
 
 import os  # File saving etc.
@@ -173,7 +173,8 @@ def do_relaxation(s, x_0, x_array, critical_slope, open_bounds, neighbour_LUD, r
 
 
         # Debugging
-        ##print("-- Level: "+str(result["duration"])+" --| -- relaxSites: "+str(x_array.shape[0]))
+        if result["duration"] > 100:
+            print("-- Level: "+str(result["duration"])+" --| -- relaxSites: "+str(x_array.shape[0]))
 
 
         # To emulate simultaneous relaxations, do them successively for each member of x_array
@@ -193,7 +194,6 @@ def do_relaxation(s, x_0, x_array, critical_slope, open_bounds, neighbour_LUD, r
                 continue
 
             # If x is right at an 'open edge', just drop excess grains from sandpile for too large s[x]
-            
             if s[tuple(x)] >= critical_slope and at_open_edge(s, x, open_bounds):
                 sPrime[tuple(x)] = 0
                 relaxEvents = np.append(arr=relaxEvents, values=[it], axis=0)   # Bookkeeping (see below)
@@ -448,52 +448,6 @@ def get_criticality(sandbox, critical_slope):
     return critParm
 
 
-### Plotting functions and classes ###
-
-
-def get_2d_sandboxSlice(sandbox):
-    """
-    Returns 2-dim sub-array of sandbox for plotting purposes if dimension is larger than 2.
-
-    :param sandbox: np.array sandbox
-    :return: 2-dim sub-array of sandbox
-    """
-
-    if sandbox.ndim <= 2:
-        return sandbox
-
-    tdSlice = np.copy(sandbox)
-    tDim = sandbox.ndim
-
-    # Select sub-array in the middle until slice has 2 dimensions
-    while tDim > 2:
-        tdSlice = tdSlice[int(np.ceil((sandbox.shape[tDim-1]-1) / 2.0))]
-        tDim -= 1
-
-    return tdSlice
-
-def get_slopeBox(sandbox):
-    """
-    Returns np.array with BTW compatible slopes
-    instead of number of grains at each position.
-
-    :param sandbox: np.array sandbox
-    :return: n.array slopes
-    """
-
-    slopebox = np.zeros_like(sandbox);
-
-    # Loop through all axes to sum up slopes in all directions
-    for i in xrange(sandbox.ndim):
-
-        # Shift i-th axis about 1
-        sShift = np.roll(sandbox, 1, axis=i)
-
-        slopebox += (sShift - sandbox)
-
-    return slopebox
-
-
 def make_critical(s, critical_slope, open_bounds, max_iterations=1000000, saturation_parameter=1e-5):
     """
     Fills s with sand until a 'level' fraction of sites of the sandbox are critical.
@@ -602,7 +556,7 @@ def get_critical_sandbox(length, dimension, model, critical_slope, open_bounds, 
         init_state='fill'
 
     s = init_sandbox(length, dimension, state=init_state, critical_slope=critical_slope)
-    s = make_critical(s, critical_slope, open_bounds, max_iterations=400000, saturation_parameter=1e-3)
+    s = make_critical(s, critical_slope, open_bounds, max_iterations=400000, saturation_parameter=1e-6)
     return s
 
 
@@ -693,7 +647,7 @@ def main(length=None, dimension=None, critical_slope=None, total_drives=None, si
                 app.deleteLater()  # Important for several simulations
             # Just do simulation
             else:
-                do_simulation(s, _CRIT_S, _SAND_DROPS, _SITE, result_array, open_boundaries, avalanche=None)
+                do_simulation(s, _CRIT_S[i], _SAND_DROPS, _SITE, result_array, open_boundaries, avalanche=None)
 
             
             # Capture time of simulation
