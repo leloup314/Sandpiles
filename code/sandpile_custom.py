@@ -331,7 +331,8 @@ def do_simulation(s, critical_slope, total_drops, site, result_array, open_bound
     :param site: tuple of site on which the sand is dropped or None; if None, add randomly
     :param result_array: np.array in which the results of all iterations are stored
     :param plot_simulation: False or pg.ImageItem; If ImageItem, the entire evolution of the sandbox will be plot
-    :param avalanche: np.array of np.arrays of bools like s or None; if None, dont store avalanche configurations, else store which sites took part in avalanche for each iteration
+    :param avalanche: np.array of np.arrays of bools like s or None; if None, dont store avalanche configurations,
+           else store which sites took part in avalanche for each iteration
     """
 
     
@@ -341,7 +342,8 @@ def do_simulation(s, critical_slope, total_drops, site, result_array, open_bound
     # Make temporary array to store avalanche configuration in order to calculate linear size and area
     tmp_avalanche = np.zeros_like(s, dtype=np.bool)
     
-    # Flag indicating whether or not to calculate the lin_size; large avalanches (in sandboxes > 2 dimensions, > 50 length) cause several 10 GB RAM consumption when calculating lin_size
+    # Flag indicating whether or not to calculate the lin_size; large avalanches (in sandboxes > 2 dimensions, > 50 length)
+    # cause several 10 GB RAM consumption when calculating lin_size
     lin_size_flag = True if np.power(s.shape[0], s.ndim) > 50**3 else False
     
     #Feedback
@@ -367,7 +369,8 @@ def do_simulation(s, critical_slope, total_drops, site, result_array, open_bound
             est_hours = avg_time * (total_drops-drop)/60**2
             est_mins = (est_hours % 1) * 60
             est_secs = (est_mins % 1) * 60
-            msg = 'At drop %i of %i total drops (%.1f %s). Estimated time left: %i h %i m %i s' % (drop, total_drops, 100 * float(drop)/total_drops, "%", int(est_hours), int(est_mins), int(est_secs))
+            msg = 'At drop %i of %i total drops (%.1f %s). Estimated time left: %i h %i m %i s' % (drop, total_drops, 100 * float(drop)/total_drops, "%", int(est_hours),
+                  int(est_mins), int(est_secs))
             logging.info(msg)
         
         # Extract result array for current iteration
@@ -702,7 +705,8 @@ if __name__ == "__main__":
     if args['setup'] and not yaml_flag:
         with open(args['setup'], 'r') as setup:
             simulation_setup = yaml.safe_load(setup)
-        logging.info('Starting simulation from setup file %s:%s' % (str(args['setup']), '\n\n\t' + '\n\t'.join(str(key) + ': ' + str(simulation_setup[key]) for key in simulation_setup.keys()) + '\n'))
+        logging.info('Starting simulation from setup file %s:%s' % (str(args['setup']), '\n\n\t' + '\n\t'.join(str(key)
+                     + ': ' + str(simulation_setup[key]) for key in simulation_setup.keys()) + '\n'))
     # Use default values
     else:
         simulation_setup = {}
