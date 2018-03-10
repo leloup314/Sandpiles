@@ -4,7 +4,10 @@
 *.log
 # Python
 *.pyc
+# Numpy
+*.npy
 # LaTeX
 report/*
 !report/*.tex
+!report/refs.bib
 !report/gfx/*

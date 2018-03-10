@@ -72,6 +72,10 @@ def plot_sandbox(s, total_drops, site=None, discrete=True, output_pdf=None):
     plt.title(title)
     plt.xlabel('x')
     plt.ylabel('y')
+
+    if s.ndim > 2:
+        s = get_2d_sandboxSlice(s)
+
     if discrete:
         cmap = plt.get_cmap('jet', np.max(s)-np.min(s)+2)  # discrete colormap
     else:
@@ -100,7 +104,7 @@ def plot_hist(data, name, binning=True, title=None):
     plt.ylabel('%s frequency' % name)
     data_unique, data_count = np.unique(data, return_counts=True)
     if binning:
-        counts, bin_edges, _ = plt.hist(data, label='%s histogram')
+        counts, bin_edges, _ = plt.hist(data, label='%s histogram' % name)
         bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
         plt.plot(bin_centers, counts,'ro', label='Bin centers')
     else:
