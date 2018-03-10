@@ -6,14 +6,151 @@
 
 \section{Introduction}
 \label{sec:intro}
+In this paper we investigate the evolution of sandpiles into states of so-called self-organized criticality (SOC) using
+two different models for simulation. Furthermore we analyze the sandpiles' scaling behavior and scaling exponents.
+
+Self-organized criticality describes a special case of the very general concept of criticality. Every system
+exhibiting self-organized criticality has in common the occurence of macroscopic scale invariant properties.
+In the picture of a real sandpile this can be seen by looking at the average slope of the sandpile,
+which stays constant even if the sandpile is enlarged by adding more and more sand to it.
+It is notable that this is the case despite the dynamics of a pile of sand is actually governed by complicated
+microscopic\footnote{Microscopic in the sense of the size of a sand grain compared to the whole pile.} interactions
+of its many constituents, the sand grains.
+
+Such self-organized criticality has been observed before in simulations of sandpiles carried out by Bak, Tang and
+Wiesenfeld in the 1980s~\cite{BakTangWiesenfeld}. It is indeed interesting to further analyze such a sandpile model
+because it can serve as a toy model for many other similar behaving systems like landslides, rock falls, earth quakes
+etc., which all follow from different physical processes, though.
+In the mentioned systems signs of self-organized criticality have been observed, not only from simulations but also
+from real-world data. %TODO cite
+
+We simulate the sandpiles using a cellular automaton algorithm analog to the approach of Bak, Tang and Wiesenfeld,
+which is commonly referred to as the \enquote{BTW model}. Scaling exponents are determined and compared to the
+results of a customized sandpile model.
+
+Section~\ref{sec:theory} starts with an overview on the theory behind self-organized criticality and in particular
+explains the scaling behavior governed by the scaling exponents.
+In section~\ref{sec:experiment} our implementation of the sandpile cellular automata is shown as well as
+the used methods for extracting the relevant parameters from the generated data.
+The results are presented in section~\ref{sec:results} and discussed in section~\ref{sec:analysis}.
 
 
 \section{Theory}
 \label{sec:theory}
 
+\subsection{Self-organized criticality}
+\label{sec:th:SOC}
+To understand the concept of self-organized criticality consider first a system that exhibits a critical state,
+like the Ising model. The critical state in the Ising model corresponds to a phase transition where vanishing
+magnetization evolves into spontaneous magnetization. This happens at a specific temperature, the critical temperature
+$T_{\mathrm{crit}}$. To obtain a system in the critical state, the temperature has to be precisely tuned to the critical
+temperature.
+
+The criticality of the system leads to scale invariant properties. For instance clusters of the same spin direction
+will form and the size distribution of these clusters follows a simple power law. A power law distribution implies
+scale invariance, where scale invariance means that the dynamics of the considered system does not change if the system
+is scaled by some global factor. In particular the observables' distribution functions keep the same form.
+
+The crucial difference of this definition of criticality and the criticality observed in the case of the sandpile model
+is that sandpiles will evolve into a critical state without tuning of any critical parameter.
+If enough sand is deposited into a sandbox or, respectively, enough iteration steps of the computer model are performed
+it reaches an equilibrium state by itself with a fixed average slope. This self-organization into a critical state
+allways happens, independently of the actual detailed model parameters.\footnote{Note that the slope can still depend
+on these parameters.} Thus this phenomenon is called \enquote{self-organized criticality}.
+
+\subsection{Scaling exponents}
+\label{sec:th:scaling}
+If there is scale invariance in a system it can be directly observed in the distribution functions
+of the observables of the system as indicated above. Consider some observabe $\hat{O}$ that can be measured in the
+present system. If this observable is measured many times and histogrammed one obtains a distribution according to the
+corresponding probability density function $P^{O}(o)$.
+If now the system is scaled by a factor $\lambda$ it must hold
+\begin{equation}\label{eq:scalingCondition}
+P^{O}(\lambda o) = f(\lambda) \times P^{O}(o)
+\end{equation}
+due to the assumed scale invariance.
+
+As scale invariance is suspected as a main property of SOC models in general, one is mainly interested in studying
+these distribution functions to proof this. To do this a theoretical prediction is necessary first.
+In the simplest approximation the distribution function of an observable $\hat{O}$ in a scale invariant SOC model
+is assumed to be a simple power law
+\begin{equation}\label{eq:simpleScaling}
+P^{O}(o) \sim o^{-\rho}
+\end{equation}
+in order to fulfill Eq.\,\eqref{eq:scalingCondition} as $(\lambda o)^{-\rho}\sim o^{-\rho}$.
+Here $\rho$ is called the \emph{scaling exponent} or \emph{critical exponent} of the observable $\hat{O}$.
+
+However, in a real implementation of the sandpile model or any other SOC model one has to deal with finite system sizes
+since infinitely large systems can neither be simulated nor do they exist in nature.
+A finite system size limits the validity of Eq\,\eqref{eq:simpleScaling} because for instance avalanche sizes on a
+sandpile are naturally limited to the size of the sandpile itself. Thus a more sophisticated description of scaling
+has to be used, so-called \emph{finite-size scaling} as described in \cite{SOC-book}:
+\begin{equation}\label{eq:finiteSizeScaling}
+P^{O}(o) = a o^{-\rho} G^{O}\left(\sfrac{o}{o_c(L)}\right), \quad o_c(L)=b L^D
+\end{equation}
+The additional scaling function $G^{O}$ accounts for limited size corrections to the simple power law scaling
+by modifying the probability density for values of $o$ in the order of the limiting \emph{characteristic scale}
+$o_c(L)$. This characteristic scale where limitations eventuate can itself depend on the system size $L$,
+e.g. the maximum area coverage of a two dimensional lattice is $L^2$. Thus the characteristic scale is approximately
+assumed to behave as $o_c(L)=b L^D$ for any observable, where $b,D$ depend on $\hat{O}$.
+
+One possibility to obtain the scaling exponent $\rho$ (and also $D$) from the measured distribution functions
+is via their moments $\langle P^n\rangle$.
+\dots%TODO
+
 
 \section{Experimental Methods}
 \label{sec:experiment}
+
+\subsection{Cellular Automata}
+\label{sec:cellularAutomata}
+To realize the simulation of sandpiles it is convenient to construct a cellular automaton.
+A cellular automaton is an algorithm that takes values on a discrete $n$-dimensional lattice and iteratively
+performs updates on all lattice sites with each updated value only depending on the old value and the values of its
+nearest neightbours (and possibly random numbers). Additionally the lattice sites can be periodically perturbed,
+for instance increasing the value of a randomly picked lattice site.
+\dots%TODO?
+
+\subsection{Implementation of sandpile cellular automata}
+\label{sec:sandpileImplementation}
+In general a cellular automaton for a sandpile in $\mathcal{N}$ dimensions works on an $\mathcal{N}-1$ dimensional
+lattice where each lattice site stands for a stack of sand grains in the left dimension. That means for example that
+a real sandpile, which is three dimensional, is simulated on a two dimensional lattice reflecting the ground as $x$-$y$
+plane. The entry on each site then characterizes how many grains of sand are stacked in the $z$ direction.
+
+It can be either chosen to store the actual amount of grains as the entry or the slope with respect to the vicinity
+of the stack. Both choices enable for sufficient characterization and simulation of the microscopic dynamics of the
+sandpile. Chosing the slope entrys, however, has the drawback that the model will then be non isotropic anymore, as will
+become clear in the following, whereas storing the actual heights can make the model implementation a bit more complex.
+
+Within the scope of this paper we have implemented two different cellular automata that are based on these two different
+choices. The first approach reflects the BTW model.
+The BTW model by Bak, Tang and Wiesenfeld is the first model investigating SOC in sandpile dynamics. It uses a lattice
+that contains slope values and alternatingly performs a \emph{driving} and a \emph{relaxation} of the lattice:
+
+\textbf{Driving} generally describes the active perturbation of the lattice. For a real sandpile the perturbation
+intuitively consists of adding a grain of sand to the pile at a random position. Since the BTW model deals with 
+slopes the addition of one grain of sand is achieved by the following algorithm~\cite{BakTangWiesenfeld}:
+\begin{itemize}
+\item \dots%TODO
+\end{itemize}
+\dots%TODO
+
+\textbf{Relaxation}
+\dots
+\begin{itemize}
+\item \dots%TODO
+\end{itemize}
+\dots%TODO
+%TODO mention non-isotropic...
+
+The second approach to the sandpile simulations uses the local number of sand grains as lattice entries. Thus it can
+circumvent the problem of the BTW model to be non isotropic because the slopes can be directly calculated from the
+heights in every direction.
+\dots%TODO
+
+\subsection{Extraction of scaling exponents}
+\label{sec:extractCritExp}
 
 
 \section{Results}
