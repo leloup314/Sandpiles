@@ -11,3 +11,5 @@ report/*
 !report/*.tex
 !report/refs.bib
 !report/gfx/*
+# Notebook
+analysis/moment_analysis/.ipynb_checkpoints/*

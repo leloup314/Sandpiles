@@ -85,8 +85,7 @@ def plot_sandbox(s, total_drops, site=None, discrete=True, output_pdf=None):
     plt.show()
     
     if output_pdf is not None:
-        with PdfPages(output_pdf, keep_empty=False) as out:
-            out.savefig(plt.figure())
+        plt.savefig(output_pdf)
             
 
 def plot_hist(data, name, binning=True, title=None):
