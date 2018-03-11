@@ -145,7 +145,7 @@ def get_neighbouringSlopes(s, x, neighbours):
     return retSlope
 
 
-def do_relaxation(s, x_0, x_array, critical_slope, open_bounds, neighbour_LUD, result, avalanche, plot_simulation=False):
+def do_relaxation(s, x_array, critical_slope, open_bounds, neighbour_LUD, result, avalanche, plot_simulation=False):
     """
     Performs the avalanche relaxation mechanism recursively until all slopes are non-critical anymore.
 
@@ -173,8 +173,8 @@ def do_relaxation(s, x_0, x_array, critical_slope, open_bounds, neighbour_LUD, r
 
 
         # Debugging
-        if result["duration"] > 100:
-            print("-- Level: "+str(result["duration"])+" --| -- relaxSites: "+str(x_array.shape[0]))
+        ##if result["duration"] > 100:
+        ##    print("-- Level: "+str(result["duration"])+" --| -- relaxSites: "+str(x_array.shape[0]))
 
 
         # To emulate simultaneous relaxations, do them successively for each member of x_array
@@ -196,6 +196,7 @@ def do_relaxation(s, x_0, x_array, critical_slope, open_bounds, neighbour_LUD, r
             # If x is right at an 'open edge', just drop excess grains from sandpile for too large s[x]
             if s[tuple(x)] >= critical_slope and at_open_edge(s, x, open_bounds):
                 sPrime[tuple(x)] = 0
+                avalanche[tuple(x)] = 1
                 relaxEvents = np.append(arr=relaxEvents, values=[it], axis=0)   # Bookkeeping (see below)
                 continue
 
@@ -383,7 +384,7 @@ def do_simulation(s, critical_slope, total_drops, site, result_array, open_bound
         drive_simulation(s, p)
 
         # Relax the sandbox simultaneously
-        s = do_relaxation(s=s, x_0=p, x_array=p, critical_slope=critical_slope, open_bounds=open_bounds, neighbour_LUD=neighbour_LUD, result=current_result,
+        s = do_relaxation(s=s, x_array=p, critical_slope=critical_slope, open_bounds=open_bounds, neighbour_LUD=neighbour_LUD, result=current_result,
                           avalanche=current_avalanche, plot_simulation=plot_simulation)
 
         
@@ -394,7 +395,7 @@ def do_simulation(s, critical_slope, total_drops, site, result_array, open_bound
         
         # Get the linear size of the current avalanche if there were relaxations
         relaxations = current_result['duration']
-        if False:#relaxations != 0 and not lin_size_flag:
+        if relaxations != 0 and len(np.where(current_avalanche)[0]) > 1 and not lin_size_flag:
 
             # Get coordinates of avalanche sites
             coords = np.column_stack(np.where(current_avalanche))
@@ -497,7 +498,7 @@ def make_critical(s, critical_slope, open_bounds, max_iterations=1000000, satura
         drive_simulation(s, site)
 
         # Relax the sandbox simultaneously
-        s = do_relaxation(s=s, x_0=site, x_array=site, critical_slope=critical_slope, open_bounds=open_bounds,
+        s = do_relaxation(s=s, x_array=site, critical_slope=critical_slope, open_bounds=open_bounds,
                              neighbour_LUD=neighbour_LUD, result=current_result, avalanche=tmp_avalanche)
 
     return s
@@ -684,7 +685,7 @@ def main(length=None, dimension=None, critical_slope=None, total_drives=None, si
                 # Plot all histograms
                 for field in result_array.dtype.names:
                     plot_hist(result_array[field], field, binning=False, title=None)
-                    
+
             # Write timing with info to log
             with open('timing.log', 'a') as f:
                 t = time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.gmtime())
