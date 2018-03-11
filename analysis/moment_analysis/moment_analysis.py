@@ -24,7 +24,7 @@ def get_prefix(dim, l):
 
 
 # Function to load data of first and second moment which is going to be bootstrapped
-def load_data(dim, model, observable):
+def load_data(dim, model, observable, crit_slope=None):
     """Loads first and second moment data of observable of dim dimensions of model"""
     # Our lattice lengths are from 10 to 100
     lattices = np.arange(10, 110, 10)
@@ -47,8 +47,14 @@ def load_data(dim, model, observable):
                 prefix = tmp[0]
                 tmp_n = tmp[-1]
                 tmp_model = tmp[-2]
+                
+                if tmp_model=='custom' and crit_slope is not None:
+                    slope_flag = crit_slope == int(tmp[tmp.index('slope') + 1])
+                else:
+                    slope_flag = True
 
-                if get_prefix(dim, length) == prefix and model==tmp_model and tmp_n==str(n_file):
+                if get_prefix(dim, length) == prefix and model==tmp_model and tmp_n==str(n_file) and slope_flag:
+                    
                     # Load data
                     tmp_data = np.load(os.path.join(sim_dir, f))
                     
@@ -353,49 +359,50 @@ def double_bootstrap_fit(moment1_data, moment2_data, n_bootstraps, n_inner):
     return return_dict
 
 
-def main2d():
+def main():
     
     ### Basically this is the main ###
 
-    results2d = {'duration': {}, 'size': {}, 'area': {}}
+    results = {'duration': {}, 'size': {}, 'area': {}}
     n_bootstraps = 40  # Rule of thumb: n_bootstraps = 4 * n_samples
     n_inner = 20000 # Number of double bootstraps
     n_fits = 100  # Number of fits
-    
-    start = time.time()
+    dim = 3
+    model = 'btw'
+    crit_slope = 5
     # Do n_fits in order to get the quantities with minimum uncertainty for all extracted quantities
     for i in range(n_fits):
         # Feedback
         print '===Fit %i===' % i
         
         # Make temporary result
-        tmp_results2d = {'duration': None, 'size': None, 'area': None}
+        tmp_results = {'duration': None, 'size': None, 'area': None}
         
         # Loop over observables
-        for observable in tmp_results2d.keys():
+        for observable in tmp_results.keys():
             
             # Load first and second moment from data
-            mom1, mom2 = load_data(2, 'btw', observable)
+            mom1, mom2 = load_data(dim, model, observable, crit_slope=crit_slope)
             
             # Try doing bootstrap fits; ValueError occurs if some matrix is not invertable
             try:
                 # Do double bootstrap fit for observable's moments
-                tmp_results2d[observable] = double_bootstrap_fit(mom1, mom2, n_bootstraps, n_inner)
+                tmp_results[observable] = double_bootstrap_fit(mom1, mom2, n_bootstraps, n_inner)
                 
                 # Loop over extraction quantities and write tmp results to final result dict;
                 # Convert everything to floats in order to safe to file
-                for key in tmp_results2d[observable].keys():
+                for key in tmp_results[observable].keys():
                     
                     # First iteration of n_fits: initialize values in result dict
-                    if key not in results2d[observable]:
-                        results2d[observable][key] = []
-                        for j in range(len(tmp_results2d[observable][key])):
-                            results2d[observable][key].append(float(tmp_results2d[observable][key][j]))
+                    if key not in results[observable]:
+                        results[observable][key] = []
+                        for j in range(len(tmp_results[observable][key])):
+                            results[observable][key].append(float(tmp_results[observable][key][j]))
                     
                     # Overwrite if lower deviation on quantity has been achieved within this fit
-                    elif tmp_results2d[observable][key][1] < results2d[observable][key][1]:
-                        for j in range(len(tmp_results2d[observable][key])):
-                            results2d[observable][key][j] = float(tmp_results2d[observable][key][j])
+                    elif tmp_results[observable][key][1] < results[observable][key][1]:
+                        for j in range(len(tmp_results[observable][key])):
+                            results[observable][key][j] = float(tmp_results[observable][key][j])
             
             # Matrix inversion failed
             except ValueError:
@@ -403,13 +410,12 @@ def main2d():
                 continue
 
     # Safe results
-    with open('results.yaml', 'w') as f:
-        yaml.safe_dump(results2d, stream=f, default_flow_style=False)
-        
-    print 'Runtime: %.2f seconds' % (time.time() - start)
+    model_str = model if model == 'btw' else model + '_crit_slope_%i' % crit_slope
+    with open('results%id_%s.yaml' % (dim, model_str), 'w') as f:
+        yaml.safe_dump(results, stream=f, default_flow_style=False)
         
         
 if __name__ == '__main__':
-    main2d()
+    main()
 
     
