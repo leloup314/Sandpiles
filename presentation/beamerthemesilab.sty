@@ -1,0 +1,21 @@
+%
+% Beamer theme for silab.
+%
+% Michael Schnell, 2014
+%
+\ProvidesPackageRCS $Header: beamerthemesilab.sty,v 445340293dde 2014/04/01 12:51:34 schnell $
+
+\mode<presentation>
+
+\newif\ifbeamer@secheader
+\beamer@secheaderfalse
+
+\DeclareOptionBeamer{secheader}{\beamer@secheadertrue}
+\ProcessOptionsBeamer
+
+\useinnertheme[shadow]{rounded}
+\useoutertheme{silab}
+\setbeamercolor{separation line}{use=structure,bg=structure.fg!50!bg}
+
+\mode
+<all>

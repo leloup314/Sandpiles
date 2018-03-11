@@ -1,0 +1,134 @@
+%
+% Beamer outer theme for silab.
+%
+% Michael Schnell, 2014
+%
+\ProvidesPackageRCS $Header: beamerouterthemesilab.sty,v 445340293dde 2014/04/01 12:51:34 schnell $
+
+
+\mode<presentation>
+
+\setbeamercolor*{author in head/foot}{parent=palette tertiary}
+\setbeamercolor*{title in head/foot}{parent=palette secondary}
+\setbeamercolor*{date in head/foot}{parent=palette primary}
+
+\setbeamercolor*{section in head/foot}{parent=palette tertiary}
+\setbeamercolor*{subsection in head/foot}{parent=palette primary}
+
+% Title
+\setbeamertemplate{background canvas}{
+	\ifnum\c@framenumber=1%
+		\includegraphics[width=\paperwidth,height=\paperheight]{pics/bkg.pdf}
+	\fi
+}
+
+% Title page
+\defbeamertemplate*{title page}{silab}[1][]
+{
+\vbox{}
+\begin{minipage}[t]{0.72\linewidth}
+	\vfill
+	\vskip3.0em
+
+	\begin{center}
+		\begin{beamercolorbox}[sep=8pt,center]{title}
+			\usebeamerfont{title}\inserttitle\par
+			\ifx\insertsubtitle\@empty
+			\else
+				\vskip2.25em
+				{\usebeamerfont{subtitle}\usebeamercolor[fg]{subtitle}\insertsubtitle\par}
+			\fi     
+		\end{beamercolorbox}
+
+		\vskip1em\par
+		\begin{beamercolorbox}[sep=8pt,center]{author}
+			\usebeamerfont{author}\insertauthor
+		\end{beamercolorbox}
+
+		\begin{beamercolorbox}[sep=8pt,center#1]{institute}
+			\usebeamerfont{institute}\insertinstitute
+		\end{beamercolorbox}
+
+		\begin{beamercolorbox}[sep=8pt,center#1]{date}
+		\ifx\showtitledate\@empty
+			\usebeamerfont{date}\insertdate
+		\fi
+		\end{beamercolorbox}\vskip0.5em
+	\end{center}
+	\vfill
+\end{minipage}
+}
+
+% Foot line
+\defbeamertemplate*{footline}{silab theme}
+{
+\ifnum\c@framenumber=1
+\else
+	\leavevmode
+	\hbox{
+	\ifx\fancystyle\@empty
+		\begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,center]{author in head/foot}
+	\else
+		\begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,center]{}
+	\fi
+%		\usebeamerfont{author in head/foot}\insertshortauthor~~\beamer@ifempty{\insertshortinstitute}{}{(\insertshortinstitute)}
+		\usebeamerfont{author in head/foot}\insertshortauthor
+	\end{beamercolorbox}
+
+%	\begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,center]{title in head/foot}
+	\begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,center]{}
+		\ifx\showshorttitle\@empty
+			\usebeamerfont{title in head/foot}\insertshorttitle
+		\fi
+	\end{beamercolorbox}
+%	\begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,right]{date in head/foot}
+	\begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,right]{}
+		\insertframenumber{} / \inserttotalframenumber\hspace*{2ex} 
+	\end{beamercolorbox}}
+	\vskip0pt
+\fi
+}
+
+% No headlines with current section etc...
+\defbeamertemplate*{headline}{silab theme}
+{
+}
+
+% Frame title
+\defbeamertemplate*{frametitle}{silab}[1][left]
+{
+\ifbeamercolorempty[bg]{frametitle}{}{}
+\@tempdima=\textwidth
+\advance\@tempdima by\beamer@leftmargin
+\advance\@tempdima by\beamer@rightmargin
+
+\begin{beamercolorbox}[sep=0.3cm,#1,wd=\the\@tempdima]{frametitle}
+	\usebeamerfont{frametitle}
+	\vbox{}\vskip-1ex
+	\if@tempswa\else\csname beamer@fte#1\endcsname\fi
+	\begin{minipage}[t]{0.82\textwidth}
+		\strut\insertframetitle\strut\par
+	\end{minipage}
+	\begin{minipage}[t]{0.18\textwidth}
+		\includegraphics[height=0.34\textwidth]{pics/logo.eps}
+	\end{minipage}
+	%{  
+	%\ifx\insertframesubtitle\@empty
+	%\else
+		%{\usebeamerfont{framesubtitle}\usebeamercolor[fg]{framesubtitle}\insertframesubtitle\strut\par}
+	%\fi 
+	%}  
+	\end{beamercolorbox}
+	\vskip -3.0ex
+
+	% Separation line
+	\begin{beamercolorbox}[wd=0.95\paperwidth,colsep=0.5pt]{lower separation line head}
+	\end{beamercolorbox}
+}
+
+
+% Set beamer size
+\setbeamersize{text margin left=1em,text margin right=1em}
+
+\mode
+<all>

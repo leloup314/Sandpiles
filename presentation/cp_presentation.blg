@@ -1,0 +1,17 @@
+[0] Config.pm:340> INFO - This is Biber 2.4
+[0] Config.pm:343> INFO - Logfile is 'cp_presentation.blg'
+[70] biber:287> INFO - === So Mär 11, 2018, 17:22:32
+[226] Biber.pm:348> INFO - Reading 'cp_presentation.bcf'
+[474] Biber.pm:742> INFO - Found 1 citekeys in bib section 0
+[483] Biber.pm:3151> INFO - Processing section 0
+[531] Biber.pm:3308> INFO - Looking for bibtex format file '../report/refs.bib' for section 0
+[541] bibtex.pm:1113> INFO - Decoding LaTeX character macros into UTF-8
+[546] bibtex.pm:974> INFO - Found BibTeX data source '../report/refs.bib'
+[549] Utils.pm:147> WARN - I didn't find a database entry for 'ACRR' (section 0)
+[560] UCollate.pm:65> INFO - Overriding locale 'en-US' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[561] UCollate.pm:65> INFO - Overriding locale 'en-US' defaults 'variable = shifted' with 'variable = non-ignorable'
+[561] Biber.pm:3028> INFO - Sorting list 'none/global' of type 'entry' with scheme 'none' and locale 'en-US'
+[561] Biber.pm:3032> INFO - No sort tailoring available for locale 'en-US'
+[561] bbl.pm:519> INFO - Writing 'cp_presentation.bbl' with encoding 'UTF-8'
+[564] bbl.pm:615> INFO - Output to cp_presentation.bbl
+[564] Biber.pm:109> INFO - WARNINGS: 1
