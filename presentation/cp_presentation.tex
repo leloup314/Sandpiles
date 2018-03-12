@@ -54,7 +54,7 @@
 \usepackage{overpic}
 \usepackage{scalerel}
 \usepackage{tikz}
-\graphicspath{{./pics/}{./gif/}{../analysis/avalanche_formations/}{../analysis/moment_analysis/plots/}{../analysis/naive_fits/}}
+\graphicspath{{./pics/}{./gifs/}{../analysis/avalanche_formations/}{../analysis/moment_analysis/plots/}{../analysis/naive_fits/}}
 %\usepackage{ubonn-biblatex}
 \usepackage[sorting=none, natbib=true, style=numeric]{biblatex}
 
@@ -158,10 +158,15 @@
 	\begin{frame}{Sandpile dynamics -- Avalanche evolution}
 		\begin{figure}[h]
 			\captionsetup{width=0.9\textwidth}
-			\begin{center}
-			\animategraphics[width=0.75\textwidth, loop, autoplay]{24}{frame_}{0}{300}
-			\caption{Avalanche evolution in a 2 dimensional sandbox (BTW)}
-			\end{center}
+			\centering
+			\only<1>{
+			\subfigure[BTW model]{\animategraphics[width=0.45\textwidth, loop, autoplay]{15}{btw_random_}{1}{250}}
+			\subfigure[Custom model]{\animategraphics[width=0.45\textwidth, loop, autoplay]{15}{custom_random_}{1}{250}}
+			\caption{Avalanche evolution in a 2 dimensional sandbox of length 50 (\textbf{random} drives)}}
+			\only<2>{
+			\subfigure[BTW model]{\animategraphics[width=0.45\textwidth, loop, autoplay]{15}{btw_center_}{1}{250}}
+			\subfigure[Custom model]{\animategraphics[width=0.45\textwidth, loop, autoplay]{15}{custom_center_}{1}{250}}
+			\caption{Avalanche evolution in a 2 dimensional sandbox of length 50 (\textbf{center} drives)}}
 		\end{figure}
 	\end{frame}
 	
