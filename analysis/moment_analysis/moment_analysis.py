@@ -364,11 +364,12 @@ def main():
     ### Basically this is the main ###
 
     results = {'duration': {}, 'size': {}, 'area': {}}
-    n_bootstraps = 40  # Rule of thumb: n_bootstraps = 4 * n_samples
-    n_inner = 20000 # Number of double bootstraps
+    n_bootstraps = 100  # Rule of thumb: n_bootstraps = 4 * n_samples
+    n_inner = 10000 # Number of double bootstraps
     n_fits = 100  # Number of fits
-    dim = 2
-    model = 'custom'
+    dim = 3
+    model = 'btw'
+    print 'n_i: %i, n_bootstrap: %i' % (n_inner, n_bootstraps)
     crit_slope = 5
     # Do n_fits in order to get the quantities with minimum uncertainty for all extracted quantities
     for i in range(n_fits):
@@ -401,6 +402,7 @@ def main():
                     
                     # Overwrite if lower deviation on quantity has been achieved within this fit
                     elif tmp_results[observable][key][1] < results[observable][key][1]:
+                        print 'Overwriting %s: %s with %s' % (key, ', '.join([str(e) for e in results[observable][key]]), ', '.join([str(e) for e in tmp_results[observable][key]]))
                         for j in range(len(tmp_results[observable][key])):
                             results[observable][key][j] = float(tmp_results[observable][key][j])
             
