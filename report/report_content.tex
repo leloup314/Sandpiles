@@ -18,11 +18,11 @@ microscopic\footnote{Microscopic in the sense of the size of a sand grain compar
 of its many constituents, the sand grains.
 
 Such self-organized criticality has been observed before in simulations of sandpiles carried out by Bak, Tang and
-Wiesenfeld in the 1980s~\cite{BakTangWiesenfeld}. It is indeed interesting to further analyze such a sandpile model
+Wiesenfeld in the 1980s. It is indeed interesting to further analyze such a sandpile model
 because it can serve as a toy model for many other similar behaving systems like landslides, rock falls, earth quakes
 etc., which all follow from different physical processes, though.
 In the mentioned systems signs of self-organized criticality have been observed, not only from simulations but also
-from real-world data. %TODO cite
+from real-world data~\cite{Hergarten}.
 
 We simulate the sandpiles using a cellular automaton algorithm analog to the approach of Bak, Tang and Wiesenfeld,
 which is commonly referred to as the \enquote{BTW model}. Scaling exponents are determined and compared to the
@@ -61,24 +61,24 @@ on these parameters.} Thus this phenomenon is called \enquote{self-organized cri
 \subsection{Scaling exponents}
 \label{sec:th:scaling}
 If there is scale invariance in a system it can be directly observed in the distribution functions
-of the observables of the system as indicated above. Consider some observabe $\hat{O}$ that can be measured in the
+of the observables of the system as indicated above. Consider some observabe $\hat{Y}$ that can be measured in the
 present system. If this observable is measured many times and histogrammed one obtains a distribution according to the
-corresponding probability density function $P^{O}(o)$.
+corresponding probability density function $P^{Y}(y)$.
 If now the system is scaled by a factor $\lambda$ it must hold
 \begin{equation}\label{eq:scalingCondition}
-P^{O}(\lambda o) = f(\lambda) \times P^{O}(o)
+P^{Y}(\lambda y) = f(\lambda) \times P^{Y}(y)
 \end{equation}
 due to the assumed scale invariance.
 
 As scale invariance is suspected as a main property of SOC models in general, one is mainly interested in studying
 these distribution functions to proof this. To do this a theoretical prediction is necessary first.
-In the simplest approximation the distribution function of an observable $\hat{O}$ in a scale invariant SOC model
+In the simplest approximation the distribution function of an observable $\hat{Y}$ in a scale invariant SOC model
 is assumed to be a simple power law
 \begin{equation}\label{eq:simpleScaling}
-P^{O}(o) \sim o^{-\rho}
+P^{Y}(y) \sim y^{-\rho}
 \end{equation}
-in order to fulfill Eq.\,\eqref{eq:scalingCondition} as $(\lambda o)^{-\rho}\sim o^{-\rho}$.
-Here $\rho$ is called the \emph{scaling exponent} or \emph{critical exponent} of the observable $\hat{O}$.
+in order to fulfill Eq.\,\eqref{eq:scalingCondition} as $(\lambda y)^{-\rho}\sim y^{-\rho}$.
+Here $\rho$ is called the \emph{critical exponent} of the observable $\hat{Y}$.
 
 However, in a real implementation of the sandpile model or any other SOC model one has to deal with finite system sizes
 since infinitely large systems can neither be simulated nor do they exist in nature.
@@ -86,18 +86,28 @@ A finite system size limits the validity of Eq\,\eqref{eq:simpleScaling} because
 sandpile are naturally limited to the size of the sandpile itself. Thus a more sophisticated description of scaling
 has to be used, so-called \emph{finite-size scaling} as described in \cite{SOC-book}:
 \begin{equation}\label{eq:finiteSizeScaling}
-P^{O}(o) = a o^{-\rho} G^{O}\left(\sfrac{o}{o_c(L)}\right), \quad o_c(L)=b L^D
+P^{Y}(y) = a y^{-\rho} G^{Y}\left(\sfrac{y}{y_c(L)}\right), \quad y_c(L)=b L^K
 \end{equation}
-The additional scaling function $G^{O}$ accounts for limited size corrections to the simple power law scaling
-by modifying the probability density for values of $o$ in the order of the limiting \emph{characteristic scale}
-$o_c(L)$. This characteristic scale where limitations eventuate can itself depend on the system size $L$,
+The additional scaling function $G^{Y}$ accounts for limited size corrections to the simple power law scaling
+by modifying the probability density for values of $y$ in the order of the limiting \emph{characteristic scale}
+$y_c(L)$. This characteristic scale where limitations eventuate can itself depend on the system size $L$,
 e.g. the maximum area coverage of a two dimensional lattice is $L^2$. Thus the characteristic scale is approximately
-assumed to behave as $o_c(L)=b L^D$ for any observable, where $b,D$ depend on $\hat{O}$.
+assumed to behave as $y_c(L)=b L^K$ for any observable, where $b,K$ depend on $\hat{Y}$.
 
-One possibility to obtain the scaling exponent $\rho$ (and also $D$) from the measured distribution functions
-is via their moments $\langle P^n\rangle$.
-\dots%TODO
+One possibility to obtain the finite-size scaling exponents $\rho$ and $K$ from the measured distribution functions
+is via their moments $\langle P^n\rangle$. These moments follow from Eq.\,\eqref{eq:finiteSizeScaling} by integration
+and as is shown in~\cite{SOC-book} in the limit of an infinitely large lattice this yields
+\begin{equation}\label{eq:momentScaling}
+\langle P^n\rangle \xrightarrow[L\to\infty]{} a g^{Y}(0) (bL)^{\sigma_n}, \sigma_n := K(1+n-\rho).
+\end{equation}
+This is as an approximation also valid for finite but large enough lattice sizes where the observable's
+characteristic scale is much larger than a certain lower cutoff parameter. This lower cutoff may arise from the
+detailed microscopic interactions and the discreteness of the lattice, i.e. $L \gg 1$ for a lattice divided into
+discrete cells of edge length $1$ can in principle yield sufficiently good results.
 
+Using Eq.\,\eqref{eq:momentScaling} the scaling exponents could now be calculated from any measured distribution
+function by doing simple linear regressions to log-log plots of different moments $\langle P^n\rangle$ against $L$.
+Combining the parameters $\sigma_n$ from the regression for different $n$ provides $\rho$ and $K$.
 
 \section{Experimental Methods}
 \label{sec:experiment}
@@ -117,43 +127,84 @@ In general a cellular automaton for a sandpile in $\mathcal{N}$ dimensions works
 lattice where each lattice site stands for a stack of sand grains in the left dimension. That means for example that
 a real sandpile, which is three dimensional, is simulated on a two dimensional lattice reflecting the ground as $x$-$y$
 plane. The entry on each site then characterizes how many grains of sand are stacked in the $z$ direction.
+We will denote these lattice entries by the variable $s(\vec{r})$ in the following, with the discrete lattice sites
+$\vec{r}=(x,y,\ldots)^\top$.
 
-It can be either chosen to store the actual amount of grains as the entry or the slope with respect to the vicinity
+It can be either chosen to store the actual amount of grains in the entry $z$ or the slope with respect to the vicinity
 of the stack. Both choices enable for sufficient characterization and simulation of the microscopic dynamics of the
 sandpile. Chosing the slope entrys, however, has the drawback that the model will then be non isotropic anymore, as will
 become clear in the following, whereas storing the actual heights can make the model implementation a bit more complex.
 
 Within the scope of this paper we have implemented two different cellular automata that are based on these two different
-choices. The first approach reflects the BTW model.
-The BTW model by Bak, Tang and Wiesenfeld is the first model investigating SOC in sandpile dynamics. It uses a lattice
-that contains slope values and alternatingly performs a \emph{driving} and a \emph{relaxation} of the lattice:
+choices.
+
+\subsubsection{The BTW model}
+The first approach reflects the BTW model. The BTW model by Bak, Tang and Wiesenfeld~\cite{BakTangWiesenfeld:1987}
+is the first model investigating SOC in sandpile dynamics. It uses a lattice that contains slope values and
+alternatingly performs a \emph{driving} and a \emph{relaxation} of the lattice:
 
 \textbf{Driving} generally describes the active perturbation of the lattice. For a real sandpile the perturbation
-intuitively consists of adding a grain of sand to the pile at a random position. Since the BTW model deals with 
-slopes the addition of one grain of sand is achieved by the following algorithm~\cite{BakTangWiesenfeld}:
+intuitively consists of adding a grain of sand to the pile at a random position. Since the BTW model deals with slopes
+the addition of one grain of sand could not be achieved by just increasing $s(x,y)$ about one but the neighbouring
+entries would have to be changed, too. This type of driving is called \emph{conservative driving}.
+For the BTW model, however, we decided to use \emph{non-conservative driving} described by simply adding one slope
+unit to the considered lattice site:
 \begin{itemize}
-\item \dots%TODO
+\item $s(\vec{r}) \mapsto s(\vec{r})+1$
 \end{itemize}
-\dots%TODO
+The non-conservative driving can be thought of as adding grains of sand to \emph{all} uphill sites with respect to
+$\vec{r}$, which is of course unphysical but converges much faster to the SOC state~\cite{Christensen1991}. It can
+still reproduce results similar to the conservative algorithm when the same, physical, relaxation algorithm is used.
 
-\textbf{Relaxation}
-\dots
+\textbf{Relaxation} takes place after a driving step has performed. If the sandpile becomes too steep somewhere on the
+lattice, i.e. $s > s_{\mathrm{crit}}$ with the \emph{critical slope} $s_{\mathrm{crit}}$, after sand has been added
+the pile gets instable. It locally collapses and thus creates avalanches of sand sliding down the pile until the slope
+recovers to a non-critical value again. In the BTW model for each site with critical slope the following relaxation
+algorithm is performed:
 \begin{itemize}
-\item \dots%TODO
+\item $s(\vec{r}) \mapsto s(\vec{r}) - 2\times\operatorname{Dim}\left[\vec{r}\right]$
+\item $s(\vec{r}\pm\vec{\mathrm{e}}_i) \mapsto s(\vec{r}\pm\vec{\mathrm{e}}_i) + 1,
+\quad \forall i\in\operatorname{Dim}\left[\vec{r}\right]$
 \end{itemize}
-\dots%TODO
-%TODO mention non-isotropic...
+If after the relaxation any site is still critical or if any other site has become critical in the process of relaxation
+the relaxation procedure is repeated until there is no critical site on the lattice anymore. Every call of the relaxation
+routine counts as one unit time step.
 
-The second approach to the sandpile simulations uses the local number of sand grains as lattice entries. Thus it can
-circumvent the problem of the BTW model to be non isotropic because the slopes can be directly calculated from the
-heights in every direction.
+To translate this relaxation routine to the picture of a real sandpile it calculates the local slope of the sandpile as
+the sum of the local slope ($=\mathrm{stack height difference}$) in $x$-direction and the local slope in $y$-direction.
+If this summed slope reaches the critical slope value $s_{\mathrm{crit}}$, for each dimension one grain of sand is
+redistributed from the site to its downhill nearest neighbours. This results in a consistent description of a lattice
+containing slopes and the two procedures for driving and relaxation.
+
+The fact that the slopes $s$ are only integer numbers naturally implies that they cannot contain any information about
+the direction of the slope. If one takes the real sandpile picture from above into account again it becomes clear that
+the slope direction is fixed to the same diagonal for every lattice point. This is a inherent feature of the BTW model
+as a result of the reduction to storing slopes instead of stack heights. It creates a preferred direction for avalanches
+and thus makes the model \emph{non-isotropic} such that the BTW critical state must be principally thought of as a
+\enquote{diagonal hillside}.
+
+\subsubsection{The custom model}
+The second approach for the sandpile simulations uses the local height or number of sand grains as lattice entries.
+Thus it can circumvent the problem of the BTW model to be non isotropic because the slopes can be directly calculated
+from the heights in every direction.
+The overall implementation of the custom model cellular automaton essentially follows the implementation of BTW model.
+Since in the custom model the lattice entries $s(\vec{r})$ are heights instead of slopes the relaxation procedure
+works differently compared to the BTW model. \dots
 \dots%TODO
 
 \subsection{Extraction of scaling exponents}
 \label{sec:extractCritExp}
 
+%--> standard set of exponents of an SOC model:
+%tau:   avalanche size (rho)
+%D:     avalanche dimension (K)
+%
+%alpha: avalanche duration (rho)
+%Z:     dynamical exponent (K)
 
-\section{Results}
+
+
+\section{Simulation Results}
 \label{sec:results}
 
 
