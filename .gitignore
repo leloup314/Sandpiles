@@ -11,6 +11,7 @@ report/*
 !report/*.tex
 !report/refs.bib
 !report/gfx
+!report/plots
 presentation/*
 !presentation/*.tex
 !presentation/pics/*
