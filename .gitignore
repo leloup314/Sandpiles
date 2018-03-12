@@ -10,7 +10,7 @@
 report/*
 !report/*.tex
 !report/refs.bib
-!report/gfx/*
+!report/gfx
 presentation/*
 !presentation/*.tex
 !presentation/pics/*
