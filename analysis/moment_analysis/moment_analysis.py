@@ -364,13 +364,13 @@ def main():
     ### Basically this is the main ###
 
     results = {'duration': {}, 'size': {}, 'area': {}}
-    n_bootstraps = 100  # Rule of thumb: n_bootstraps = 4 * n_samples
-    n_inner = 10000 # Number of double bootstraps
+    n_bootstraps = 40  # Rule of thumb: n_bootstraps = 4 * n_samples
+    n_inner = 20000 # Number of double bootstraps
     n_fits = 100  # Number of fits
-    dim = 3
-    model = 'btw'
+    dim = 2
+    model = 'custom'
     print 'n_i: %i, n_bootstrap: %i' % (n_inner, n_bootstraps)
-    crit_slope = 5
+    crit_slope = 7
     # Do n_fits in order to get the quantities with minimum uncertainty for all extracted quantities
     for i in range(n_fits):
         # Feedback
