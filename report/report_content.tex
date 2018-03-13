@@ -1,4 +1,6 @@
 \begin{abstract}
+\dots\\
+\dots\\
 \dots
 \end{abstract}
 
@@ -32,7 +34,7 @@ Section~\ref{sec:theory} starts with an overview on the theory behind self-organ
 explains the scaling behavior governed by the scaling exponents.
 In section~\ref{sec:experiment} our implementation of the sandpile cellular automata is shown as well as
 the used methods for extracting the relevant parameters from the generated data.
-The results are presented in section~\ref{sec:results} and discussed in section~\ref{sec:analysis}.
+The results are presented in section~\ref{sec:results} and discussed in section~\ref{sec:discussion}.
 
 
 \section{Theory}
@@ -77,7 +79,7 @@ is assumed to be a simple power law
 \begin{equation}\label{eq:simpleScaling}
 P^{Y}(y) \sim y^{-\rho}
 \end{equation}
-in order to fulfill Eq.~\eqref{eq:scalingCondition} as $(\lambda y)^{-\rho}\sim y^{-\rho}$.
+in order to fulfill Equation~\eqref{eq:scalingCondition} as $(\lambda y)^{-\rho}\sim y^{-\rho}$.
 Here $\rho$ is called the \emph{critical exponent} of the observable $\hat{Y}$.
 
 However, in a real implementation of the sandpile model or any other SOC model one has to deal with finite system sizes
@@ -97,18 +99,19 @@ The set of the critical exponent $\rho$ together with the \enquote{observable's 
 generally called finite-size scaling exponents or short scaling exponents.
 
 One possibility to obtain the finite-size scaling exponents $\rho$ and $K$ from the measured distribution functions
-is via their moments $\langle P^n\rangle$. These moments follow from Eq.~\eqref{eq:finiteSizeScaling} by integration
+is via their moments $\langle y^n\rangle$. These moments follow from Equation~\eqref{eq:finiteSizeScaling} by integration
 and as is shown in~\cite{SOC-book} in the limit of an infinitely large lattice this yields
 \begin{equation}\label{eq:momentScaling}
-\langle P^n\rangle \xrightarrow[L\to\infty]{} a g^{Y}(0) (bL)^{\sigma_n}, \sigma_n := K(1+n-\rho).
+\langle y^n\rangle \xrightarrow[L\to\infty]{} a g^{Y}(0) (bL)^{\sigma_n}, \sigma_n := K(1+n-\rho),
 \end{equation}
-This is as an approximation also valid for finite but large enough lattice sizes where the observable's
-characteristic scale is much larger than a certain lower cutoff parameter. This lower cutoff may arise from the
-detailed microscopic interactions and the discreteness of the lattice, i.e. $L \gg 1$ for a lattice divided into
-discrete cells of edge length $1$ can in principle yield sufficiently good results.
+with $g^{Y}(0)=\mathrm{const.}$ a definite integral containing the scaling function $G^{Y}$.
+Equation~\ref{eq:momentScaling} is as an approximation also valid for finite but large enough lattice sizes where
+the observable's characteristic scale is much larger than a certain lower cutoff parameter. This lower cutoff may arise
+from the detailed microscopic interactions and the discreteness of the lattice, i.e. $L \gg 1$ for a lattice divided
+into discrete cells of edge length $1$ can in principle yield sufficiently good results.
 
-Using Eq.~\eqref{eq:momentScaling} the scaling exponents could now be calculated from any measured distribution
-function by doing simple linear regressions to log-log plots of different moments $\langle P^n\rangle$ against $L$.
+Using Equation~\eqref{eq:momentScaling} the scaling exponents could now be calculated from any measured distribution
+function by doing simple linear regressions to log-log plots of different moments $\langle y^n\rangle (L)$ against $L$.
 Combining the parameters $\sigma_n$ from the regression for different $n$ provides $\rho$ and $K$.
 
 \section{Experimental Methods}
@@ -117,11 +120,10 @@ Combining the parameters $\sigma_n$ from the regression for different $n$ provid
 \subsection{Cellular Automata}
 \label{sec:cellularAutomata}
 To realize the simulation of sandpiles it is convenient to construct a cellular automaton.
-A cellular automaton is an algorithm that takes values on a discrete $n$-dimensional lattice and iteratively
-performs updates on all lattice sites with each updated value only depending on the old value and the values of its
-nearest neighbors (and possibly random numbers). Additionally the lattice sites can be periodically perturbed,
-for instance increasing the value of a randomly picked lattice site.
-\dots%TODO more?
+A cellular automaton is an algorithm that takes values on a discrete $n$-dimensional lattice and repeatedly performs
+updates on all lattice sites with each updated value only depending on the old value and the values of its nearest
+neighbors (and possibly random numbers). Additionally the lattice sites can be periodically perturbed, for instance
+increasing the value of a randomly picked lattice site.
 
 \subsection{Implementation of sandpile cellular automata}
 \label{sec:sandpileImplementation}
@@ -150,14 +152,14 @@ alternatingly performs a \emph{driving} and a \emph{relaxation} of the lattice:
 intuitively consists of adding a grain of sand to the pile at a random position. Since the BTW model deals with
 slopes the addition of one grain of sand could not be achieved by just increasing $s(x,y)$ about one but the neighboring
 entries would have to be changed, too. This type of driving is called \emph{conservative driving}
-(see Fig.~\ref{fig:driving:cons}).
+(see Figure~\ref{fig:driving:cons}).
 For the BTW model, however, we decided to use \emph{non-conservative driving} described by simply adding one slope
 unit to the considered lattice site:
 \begin{itemize}
 \item $s(\vec{r}) \mapsto s(\vec{r})+1$
 \end{itemize}
 The non-conservative driving can be thought of as adding grains of sand to \emph{all} uphill sites with respect to
-$\vec{r}$ (Fig.~\ref{fig:driving:non-cons}), which is of course unphysical but converges much faster to the
+$\vec{r}$ (Figure~\ref{fig:driving:non-cons}), which is of course unphysical but converges much faster to the
 SOC state~\cite{Christensen1991}. It can still reproduce results similar to the conservative algorithm when the same,
 physical, relaxation algorithm is used.
 
@@ -181,8 +183,9 @@ physical, relaxation algorithm is used.
 \textbf{Relaxation} takes place after a driving step has performed. If the sandpile becomes too steep somewhere on the
 lattice, i.e. $s > s_{\mathrm{crit}}$ with the \emph{critical slope} $s_{\mathrm{crit}}$, after sand has been added
 the pile gets instable. It locally collapses and thus creates avalanches of sand sliding down the pile until the slope
-recovers to a non-critical value again. In the BTW model for each site with critical slope the following relaxation
-algorithm is performed:
+recovers to a non-critical value again. In the BTW model the critical slope is usually fixed to
+$s_{\mathrm{crit}}=2\times\operatorname{Dim}\left[\vec{r}\right]$. For each site with critical slope the following
+relaxation algorithm is performed:
 \begin{itemize}
 \item $s(\vec{r}) \mapsto s(\vec{r}) - 2\times\operatorname{Dim}\left[\vec{r}\right]$
 \item $s(\vec{r}\pm\vec{\mathrm{e}}_i) \mapsto s(\vec{r}\pm\vec{\mathrm{e}}_i) + 1,
@@ -211,7 +214,17 @@ Thus it can circumvent the problem of the BTW model to be non isotropic because 
 from the heights in every direction.
 The overall implementation of the custom model cellular automaton essentially follows the implementation of BTW model.
 Since in the custom model the lattice entries $s(\vec{r})$ are heights instead of slopes the relaxation procedure
-works differently compared to the BTW model though. \dots
+works differently compared to the BTW model though.
+For the slope between two neighboring sites $\vec{r}_1$ and $\vec{r}_2$ the absolute difference
+$s(\vec{r}_1)-s(\vec{r}_2)$ is used. If the absolute value of this slope reaches the critical value $q_{\mathrm{crit}}$
+the site with the higher stack is called critical site. If now one site is critical with respect to at least one of its
+nearest neighbors the stack is considered unstable and about to collapse. All excess sand grains with respect to the
+neighbor with the least height will then be redistributed to all nearest neighbors to which the slope is at least
+critical until none of slopes to the neighbors is critical anymore.
+This represents one unit time step. Since grains have been redistributed and slopes could have changed, in the next
+relaxation step all nearest neighbors of the critical site are checked if they have become critical. Like in the BTW
+model this is repeated until no site is critical anymore and the avalanche stops.
+
 The driving procedure simply consists of increasing $s(\vec{r})$ about $1$.
 
 In the custom model it is possible to choose different boundary conditions for each edge of the lattice independently.
@@ -233,7 +246,7 @@ in SOC studies, which is slightly misleadingly called \emph{size} of an avalanch
 instability released in the avalanche or also the total mass-, momentum- or energy dissipation of the avalanche.
 For the automaton algorithms we precisely define all four observables as follows:
 \begin{description}
-\item[Size] The number of critical sites accumulated over all repititions of the relaxation procedure.
+\item[Size] The number of critical sites accumulated over all repetitions of the relaxation procedure.
 \item[Duration] The number of unit time steps from the triggering of the avalanche until it stops. The unit time step
                 corresponds to one repetition of the relaxation routine.
 \item[Area] The $\operatorname{Dim}\left[\vec{r}\right]-1$ dimensional volume that contains the avalanche,
@@ -241,7 +254,7 @@ For the automaton algorithms we precisely define all four observables as follows
 \item[Linear size] The maximum (euclidean) distance between any pair of sites that took part in the avalanche.
 \end{description}
 The calculation of the linear size gets very computing-intensive and memory consuming for large
-lattice lengths $L$ and has thus been disabled during our full simulations. In this paper we concentrate
+lattice sizes $L$ and has thus been disabled during our full simulations. In this paper we concentrate
 on investigating the size, duration and area.
 
 To each of the three considered observables needs to be assigned a set of scaling exponents $(\rho,K)$
@@ -262,55 +275,180 @@ by the main program. The stored data then represent samples of the underlying di
 
 Given a sample of one of these distributions, the distribution's first and second moment is estimated via
 \begin{equation}
-P^n(L) := \langle (P^{Y}(y))^n \rangle \simeq \sum_i y_i^n \Big/ \sum_i y_i^0,\quad i=1,2,
+\langle y^n\rangle(L) := \int\!\mathrm{d}y\, y^n P^{Y}(y) \simeq \sum_i y_i^n \Big/ \sum_i y_i^0,\quad i=1,2,
 \end{equation}
-where $L$ is the lattice length used in the simulation and $y_i$ the measured value of $\hat{Y}$ in the $i$-th avalanche.
-According to section~\ref{sec:th:scaling} we plot $\ln\left(P^n(L)\right)$ against $\ln\left(L\right)$ using simulations
-for different values of $L$ and apply a linear regression to the plot. This yields a straight line with slope $\sigma_n$,
-such that $\rho, K$ follow from:
+where $L$ is the lattice size used in the simulation and $y_i$ the measured value of $\hat{Y}$ in the $i$-th avalanche.
+According to section~\ref{sec:th:scaling} we plot $\ln\left(\langle y^n\rangle(L)\right)$ against $\ln\left(L\right)$
+using simulations for different values of $L$ and apply a linear regression to the plot. This yields a straight line
+with slope $\sigma_n$, such that $\rho, K$ follow from:
 \begin{equation}
 \rho = \frac{2\sigma_2 - 3\sigma_1}{\sigma_2 - \sigma_1}, \qquad\qquad K = (\sigma_2-\sigma_1)
 \end{equation}
 
-To enable for estimating uncertainties via bootstrapping, each simulation run must be applied multiple times
-such that multiple samples of the distribution lead to multiple measurement values of $\ln\left(P^n(L)\right)$ for
-constant $L$. We use a double bootstrap procedure in order to do a complete linear regression including the covariance
-matrix of the measurement points $\langle\ln\left(P^n(L_i)\right), \ln\left(P^n(L_j)\right)\rangle$.
+To enable for estimating uncertainties via bootstrapping, each simulation run must be applied multiple times such that
+multiple samples of the distribution lead to multiple measurement values of $\ln\left(\langle y^n\rangle(L)\right)$
+for constant $L$. We use a double bootstrap procedure in order to do a complete linear regression
+including the covariance matrix of the measurement points
+$\langle\ln\left(\langle y^n\rangle(L_i)\right), \ln\left(\langle y^n\rangle(L_j)\right)\rangle$.
 
 
 \section{Simulation Results}
 \label{sec:results}
 To achieve sufficiently good statistics also for the larger, i.e. rarer, avalanches each simulation was set up to
 do $100000$ random drives and was repeated ten times for doing the bootstrap. Simulations were done for both models
-in two and three dimensions for lattice lengths ranging from \SIrange{10}{100}{}.
+in two and three dimensions for lattice sizes ranging from \SIrange{10}{100}{}.
 
-In Figure~\ref{} \dots %TODO
+All the sandpile lattices used for the simulations have been filled and driven to a self-organized critical state
+beforehand using the same two cellular automata. For this purpose these were kept running until the averaged slope of
+the piles did not change significantly anymore, measured across a certain amount of drives in between.
 
+\subsubsection{BTW model}
+In Figure~\ref{fig:btwSandbox} one exemplary two-dimensional critical sandbox for the BTW model is shown,
+which represents one of the sandboxes that were used as initial sandbox for the later simulations.
 \begin{figure}[htb]
     \centering
-    \includegraphics[width=\linewidth]{moment_analysis_size_2d_btw_fit}
-    \caption{}
-    \label{fig:}
+    \includegraphics[width=\linewidth]{plots/sandboxes/BTW_100x100}
+    \caption{Critical two-dimensional sandbox of the BTW model with lattice size $L=100$.}
+    \label{fig:btwSandbox}
 \end{figure}
 
+Avalanches of different size and shape occurred in the simulations. Figure~\ref{fig:btw2DAvalanche} shows one example
+of the avalanches recorded for a two-dimensional sandbox.
+\begin{figure}[htb]
+    \centering
+    \includegraphics[width=\linewidth]{avalanches/Avalanche_2d_btw_1_report}
+    \caption{Avalanche of the BTW model in a two-dimensional sandbox with lattice size $L=100$.
+             Every black entry stands for a site that took part in the avalanche by relaxing
+             at least once during the whole avalanche.}
+    \label{fig:btw2DAvalanche}
+\end{figure}
 
+In Figure~\ref{fig:btwSizeFit} the bootstrapped linear regression of the first and second moment of the avalanche size
+distribution is shown for a two-dimensional sandbox. The data show only minor deviation from the straight line fit.
+The fits for avalanche area and duration yield similar results, also for three-dimensional lattices.
+The resulting scaling exponents for two- and three-dimensional lattices are written down in the summarizing
+Table~\ref{tab:scalingExp} on page \pageref{tab:scalingExp}.
 \begin{figure}[htb]
     \centering
-    \includegraphics[width=\linewidth]{moment_analysis_size_2d_btw_fit}
-    \caption{}
-    \label{fig:}
+    \includegraphics[width=\linewidth]{moment_analysis_size_2d_btw_fit_report}
+    \caption{Log-log plot of the first and second moments of the avalanche size distribution of two-dimensional
+             sandboxes (BTW model) against $L$ including bootstrapped straight line fits.
+             The displayed data points are mean values over ten repeated simulations.
+             Error bars are too small to be visible.}
+    \label{fig:btwSizeFit}
 \end{figure}
+
+\subsubsection{Custom model}
+Figure~\ref{fig:customSandbox} shows a sandbox obtained from the custom model simulations with $q_{\mathrm{crit}}=7$,
+open boundary conditions at the bottom and left edge and closed boundary conditions at the top and right edge.
 \begin{figure}[htb]
     \centering
-    \includegraphics[width=\linewidth]{moment_analysis_size_2d_custom_crit_slope_5_fit}
-    \caption{}
-    \label{fig:}
+    \includegraphics[width=\linewidth]{sandboxes/CST_100x100_cs7}
+    \caption{Critical two-dimensional sandbox of the custom model with lattice size $L=100$ and
+             critical slope $q_{\mathrm{crit}}=7$.
+             The boundary conditions are open at the bottom and left edge and closed otherwise.}
+    \label{fig:customSandbox}
 \end{figure}
+
+Note again that this sandbox displays heights and not slopes and hence looks completely different than the BTW sandbox
+in Figure~\ref{fig:btwSandbox}. To roughly compare both sandboxes one can have a look at Figure~\ref{fig:cstSlopebox},
+which shows how this sandbox would appear in the BTW model, i.e. shows the corresponding BTW-like slopes, which are
+a superposition of the slopes in $x$- and $y$-direction.
+\begin{figure}[htb]
+    \centering
+    \includegraphics[width=\linewidth]{sandboxes/CST_100x100_cs7_slopeBox}
+    \caption{Critical custom model sandbox from Fig.~\ref{fig:cstSandbox} that has been transformed from heights to
+             BTW-compatible summed slopes. Traces of recent avalanches are clearly visible.}
+    \label{fig:cstSlopebox}
+\end{figure}
+
+The avalanches observed in the custom model simulations are typically smaller and of a more elongated shape compared
+to the avalanches of the BTW model. Figure~\ref{fig:custom2DAvalanche} shows one example of the avalanches recorded
+for a two-dimensional sandbox.
+\begin{figure}[htb]
+    \centering
+    \includegraphics[width=\linewidth]{avalanches/Avalanche_2d_custom_6_report}
+    \caption{Avalanche of the custom model in a two-dimensional sandbox with lattice size $L=100$.}
+    \label{fig:custom2DAvalanche}
+\end{figure}
+Traces of the most recent of these avalanches can be even seen in the sandbox itself (Figure~\ref{fig:customSandbox}).
+
+Analog to the case of the BTW model we show the linear fits of the first and second moment of the avalanche size
+distribution for a two-dimensional sandbox in Figure~\ref{fig:customSizeFit}.
+The straight lines do not fit to the data as good as the ones for the custom model but for different runs of the
+bootstrap fitting the slope and fit quality changed noticeable. This seems to be caused by the limited amount of only
+ten measurements per lattice size $L$, which might not represent an ideal base sample for the bootstrap.
+The figure shows the fit run that yielded the smallest error on the resulting exponents.
+\begin{figure}[htb]
+    \centering
+    \includegraphics[width=\linewidth]{moment_analysis_size_2d_custom_crit_slope_7_fit_report}
+    \caption{Log-log plot of the first and second moments of the avalanche size distribution of two-dimensional
+             sandboxes (custom model) against $L$ including bootstrapped straight line fits.
+             The displayed data points are mean values over ten repeated simulations.
+             Error bars have been omitted for reasons of clarity.}
+    \label{fig:customSizeFit}
+\end{figure}
+
+The resulting scaling exponents for two- and three-dimensional lattices are summarized in Table~\ref{tab:scalingExp}
+together with the results for the BTW model. Results for two different values of the critical slope parameter of the
+custom model are given.
+
+\renewcommand{\arraystretch}{1.5}
+\begin{table}[htb]
+    \centering
+    \caption{Scaling exponents for avalanche size, duration and area for two- and three-dimensional (2D/3D)
+             simulations of the BTW model (BTW) and the custom model (CST). The free parameter critical slope
+             $q_{\mathrm{crit}}$ of the custom model is denoted by the index C\,$q_{\mathrm{crit}}$.}
+    \begin{tabular}{lSScSScSSr}
+    \toprule
+    \multirow{2}{*}{Model} & \multicolumn{2}{c}{Size} && \multicolumn{2}{c}{Duration} && \multicolumn{2}{c}{Area} & \\
+    \cmidrule{2-3} \cmidrule{5-6} \cmidrule{8-9}
+    & {$\tau$} & {$D$} && {$\alpha$} & {$Z$} && {$\kappa$} & {$T$} & \\
+    \midrule
+    \midrule
+    $\mathrm{BTW}$ & 1.19(9) & 2.3(2) && 1.21(2) & 1.34(3) && 1.23(7) & 1.9(2) &
+        \hspace{-20px}\rdelim\rbrace{3}{0mm}[$2$D] \\
+    $\mathrm{CST}_{\mathrm{C}5}$ & 1.3(2) & 1.6(2) && 1.2(2) & 0.7(2) && 1.3(2) & 0.8(2) & \\
+    $\mathrm{CST}_{\mathrm{C}7}$ & 1.4(2) & 1.6(4) && 1.3(1) & 0.81(8) && 1.4(1) & 1.0(1) & \\
+    \midrule
+    $\mathrm{BTW}$ & 1.3(1) & 2.5(3) && 1.45(3) & 1.41(6) && 1.4(3) & 2.6(7) &
+        \hspace{-20px}\rdelim\rbrace{2}{0mm}[$3$D] \\
+    $\mathrm{CST}_{\mathrm{C}5}$ &  &  &&  &  &&  & \vspace{2px} & \\
+    \bottomrule
+    \end{tabular}
+    \label{tab:scalingExp}
+\end{table}
+%--- depending on in which column the table appears use braces on the left- or right-hand side ---
+%\begin{table}[htb]
+%    \centering
+%    \caption{Scaling exponents for avalanche size, duration and area for two- and three-dimensional (2D/3D)
+%             simulations of the BTW model (BTW) and the custom model (CST). The free parameter critical slope
+%             $q_{\mathrm{crit}}$ of the custom model is denoted by the index C\,$q_{\mathrm{crit}}$.}
+%    \begin{tabular}{llSScSScSS}
+%    \toprule
+%    & \multirow{2}{*}{Model} & \multicolumn{2}{c}{Size} && \multicolumn{2}{c}{Duration} && \multicolumn{2}{c}{Area} \\
+%    \cmidrule{3-4} \cmidrule{6-7} \cmidrule{9-10}
+%    && {$\tau$} & {$D$} && {$\alpha$} & {$Z$} && {$\kappa$} & {$T$} \\
+%    \midrule
+%    \midrule
+%    \hspace{-20px}\ldelim\lbrace{3}{0mm}[$2$D] &
+%      $\mathrm{BTW}$ & 1.19(9) & 2.3(2) && 1.21(2) & 1.34(3) && 1.23(7) & 1.9(2) \\
+%    & $\mathrm{CST}_{\mathrm{C}5}$ & 1.3(2) & 1.6(2) && 1.2(2) & 0.7(2) && 1.3(2) & 0.8(2) \\
+%    & $\mathrm{CST}_{\mathrm{C}7}$ & 1.4(2) & 1.6(4) && 1.3(1) & 0.81(8) && 1.4(1) & 1.0(1) \\
+%    \midrule
+%    \hspace{-20px}\ldelim\lbrace{2}{0mm}[$3$D] &
+%      $\mathrm{BTW}$ & 1.3(1) & 2.5(3) && 1.45(3) & 1.41(6) && 1.4(3) & 2.6(7) \\
+%    & $\mathrm{CST}_{\mathrm{C}5}$ &  &  &&  &  &&  & \vspace{2px} \\
+%    \bottomrule
+%    \end{tabular}
+%    \label{tab:scalingExp}
+%\end{table}
 
 
 \section{Discussion}
 \label{sec:discussion}
 
+%reference p.92
 
 \section{Summary}
 \label{sec:summary}
