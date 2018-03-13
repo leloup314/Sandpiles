@@ -200,17 +200,29 @@
 	\begin{frame}{Sandpile dynamics -- Moment analysis}
 		\begin{itemize}
 			\myitemsep
-			\item {For large lattice sizes $L$ the following relation holds:
+			\item {Define the so-called $n^{\mathrm{th}}$ \textit{moment} of the observable $y$ by
 				\begin{align*}
-				\left\langle O^n \right\rangle \propto L^{D\left(1 + n - \rho \right)} \qquad \text{with} \qquad D\left(1 + n - \rho \right) \equiv \sigma_n 
+				\left\langle y^n \right\rangle := \int_{0}^{\infty} dy y^n P^{(y)}(y)
 				\end{align*}
-				where $O$ is the PDF of the observable, $n$ is the so-called \textit{moment} and $D,\ \rho$ are the critical exponents.
+				where $P^{(y)}$ is the PDF of $y$.
 				}
-			\item {Determination of the exponents of the $1^{\text{st}}$ and $2^{\text{nd}}$ moment $\sigma_1$ and $\sigma_2$ allows for the calculation of the set of critical exponents $D,\ \rho$:
+			\item {For $\lim{L \to \infty}$ the following relation holds:
 				\begin{align*}
-				D = \sigma_2 - \sigma_1 \quad , \quad \rho = \frac{2\sigma_2 - 3\sigma_1}{\sigma_2 - \sigma_1} 
+				\left\langle y^n \right\rangle \propto L^{K\left(1 + n - \rho \right)} \qquad \text{with} \qquad K\left(1 + n - \rho \right) \equiv \sigma_n 
+				\end{align*}
+				where  $K,\ \rho$ is the \textbf{set of critical exponents} of the observable $y$. Taking the logarithm, this relation exhibits a linear trend with slope $\sigma_n$.
+				}
+			\item {Determination exponents of the $1^{\text{st}}$ and $2^{\text{nd}}$ moment $\sigma_1$ and $\sigma_2$ allows for the calculation of the set of critical exponents $K,\ \rho$:
+				\begin{align*}
+				K = \sigma_2 - \sigma_1 \quad , \quad \rho = \frac{2\sigma_2 - 3\sigma_1}{\sigma_2 - \sigma_1} 
 				\end{align*} 
 				}
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}{Sandpile dynamics -- Moment analysis}
+		\begin{itemize}
+			\myitemsep
 			\item[$\Rightarrow$] Simulate $N$ samples of $O$ and calculate the critical exponents $D,\ \rho$ within several \textit{bootstraps} to estimate their numerical value as well as standard deviation from it.
 		\end{itemize}
 	\end{frame}
