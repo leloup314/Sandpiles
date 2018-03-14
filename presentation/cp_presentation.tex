@@ -102,6 +102,8 @@
     \tikz\draw[#1,line width=2pt] (0,0) -- (0.25,0);
 }
 
+\renewcommand*{\thefootnote}{\fnsymbol{footnote}}
+
 \begin{document}
     
     \begin{frame}
@@ -268,42 +270,49 @@
     }
     
     \begin{frame}{Analysis method -- Naive fit}
-        \begin{itemize}
-            \item {Straight line fit for initial verification of power-law scaling behavior
-                \begin{align*}
-                P^{(Y)}(y) \propto y^{-\rho}
-                \end{align*}
-                }
-            \item {$P^{(Y)}(y)$ deviates from linear trend due to \textit{finite size effects}:\\
-                   $\Rightarrow$ \textit{moment analysis}}
-        \end{itemize}
-        \begin{figure}[h]
-            \captionsetup{width=\textwidth}
-            \centering
-            \includegraphics[width=0.51\textwidth]{naive_fit.pdf}
-            \caption{Power law scaling behavior of avalanche duration of the BTW model.}
-        \end{figure}
+    	\begin{itemize}
+    		\item {Initial method: straight line fit of power-law scaling behavior:
+    			\begin{align*}
+    			P^{(Y)}(y) \propto y^{-\rho}
+    			\end{align*}}
+    	\end{itemize}
+    	\begin{minipage}[l]{0.5\textwidth}
+    		\begin{itemize}
+    			\item<2-> {$P^{(Y)}(y)$ deviates from linear trend due to e.g \textit{finite size effects}
+    				\begin{itemize}
+    					\item[$\bullet$] Straight line fit not sufficient to determine scaling exponents
+    					\item[$\bullet$] No reasonable estimation of uncertainties on scaling exponents possible 
+    				\end{itemize}}
+    			\item<2->[$\Rightarrow$] More sophisticated approach: so-called \textit{moment analysis}
+    		\end{itemize}
+    	\end{minipage}
+    	\begin{minipage}[r]{0.475\textwidth}
+    		%\begin{figure}[h]
+    			%\captionsetup{width=\textwidth}
+    			\centering
+    			\includegraphics[width=\textwidth]{naive_fit.pdf}
+    			%\caption{Power law scaling behavior of avalanche duration of the BTW model.}
+    		%\end{figure}
+    	\end{minipage}
     \end{frame}
     
     \begin{frame}{Analysis method -- Moment analysis}
         \begin{itemize}
             \myitemsep
-            \item {Define the so-called $n^{\mathrm{th}}$ \textit{moment} of the observable $y$ by
+            \item {Define the so-called $n^{\mathrm{th}}$ \textit{moment} of the observable $\hat{Y}$ by
                 \begin{align*}
-                \left\langle y^n \right\rangle = \int_{0}^{\infty} dy\ y^n P^{(y)}(y)
+                \left\langle y^n \right\rangle = \int_{0}^{\infty} dy\ y^n P^{(Y)}(y) \quad \text{where} \quad P^{(Y)}\equiv \text{PDF of}\ y
                 \end{align*}
-                where $P^{(y)}$ is the PDF of $y$.
             }
-            \item {For $L \to \infty$ the following relation holds:
+            \item {For $L \to \infty$ (or approx. $L\gg 1$) the following relation holds:
                 \begin{align*}
                 \left\langle y^n \right\rangle \propto L^{K\left(1 + n - \rho \right)} \qquad \text{with}
                                                                 \qquad K\left(1 + n - \rho \right) \equiv \sigma_n 
                 \end{align*}
-                where $K,\ \rho$ is the set of scaling exponents of the observable $y$. Taking the logarithm,
+                where $K,\ \rho$ is the set of scaling exponents of the observable $\hat{Y}$. Taking the logarithm,
                 this relation exhibits a linear trend with slope $\sigma_n$.
             }
-            \item {Determination scaling exponents of the $1^{\text{st}}$ and $2^{\text{nd}}$ moment $\sigma_1$ and
-                   $\sigma_2$ allows for the calculation of the set of critical exponents $K,\ \rho$:
+            \item {Determination of the set of scaling exponents $K,\ \rho$ via linear fit of the $1^{\text{st}}$ and $2^{\text{nd}}$ moments, yielding $\sigma_1$ and $\sigma_2$, like:
                 \begin{align*}
                 K = \sigma_2 - \sigma_1 \quad , \quad \rho = \frac{2\sigma_2 - 3\sigma_1}{\sigma_2 - \sigma_1} 
                 \end{align*} 
@@ -323,7 +332,7 @@
                                      \ \left\langle y^2 \right\rangle_R$ for each $L_N$
                     \item[$\bullet$] Calculate covariance matrix for each bootstrap (\textbf{double bootstrap})
                     \item[$\bullet$] Linear fit within each bootstrap sample to calculate and store $K,\ \rho$
-                    \item[$\bullet$] Estimate uncertainties by the standard deviation of $K,\ \rho$ from all bootstraps
+                    \item[$\bullet$] $K,\ \rho = \left\langle K, \rho \right\rangle_{\mathrm{bootstraps}}$ and estimate uncertainty by $\sigma (K,\ \rho)_{\mathrm{bootstraps}}$
                 \end{itemize}
             }
             \item[$\Rightarrow$] {Actual numbers for analysis in 2 and 3 dimensions:
@@ -346,19 +355,13 @@
             \caption{$1^{\mathrm{st}}$ and $2^{\mathrm{nd}}$ moments of one \textit{random} bootstrap sample for
                      avalanche \textbf{size} and overall best linear fit in 2D.}
             }
-            \only<2>{
-            \subfigure[BTW]{\includegraphics[width=0.475\textwidth]{moment_analysis_duration_2d_btw_fit.pdf}}
-            \subfigure[Custom]{\includegraphics[width=0.475\textwidth]{{moment_analysis_duration_2d_custom_crit_slope_%
-                                                                        7_fit.pdf}}}
-            \caption{$1^{\mathrm{st}}$ and $2^{\mathrm{nd}}$ moments of one \textit{random} bootstrap sample for
-                     avalanche \textbf{size} and overall best linear fit in 2D.}
-            }
-            \only<3>{
-            \subfigure{\includegraphics[width=0.475\textwidth]{moment_analysis_size_3d_btw_fit.pdf}}
-            \subfigure{\includegraphics[width=0.475\textwidth]{moment_analysis_duration_3d_btw_fit.pdf}}
-            \caption{$1^{\mathrm{st}}$ and $2^{\mathrm{nd}}$ moments of one \textit{random} bootstrap sample for
-                     avalanche \textbf{size} and overall best linear fit in 3D.}
-            }
+%            \only<2>{
+%            \subfigure[BTW]{\includegraphics[width=0.475\textwidth]{moment_analysis_size_3d_btw_fit.pdf}}
+%            \subfigure[Custom]{\includegraphics[width=0.475\textwidth]{{moment_analysis_size_3d_custom_crit_slope_%
+%                                                                        5_fit.pdf}}}
+%            \caption{$1^{\mathrm{st}}$ and $2^{\mathrm{nd}}$ moments of one \textit{random} bootstrap sample for
+%                     avalanche \textbf{size} and overall best linear fit in 3D.}
+%            }
         \end{figure}
     \end{frame}
     
@@ -381,12 +384,148 @@
             \midrule
             \hspace{-15px}\ldelim\lbrace{2}{0mm}[$3$D] &
             $\mathrm{BTW}$ & 1.3(1) & 2.5(3) && 1.45(3) & 1.41(6) && 1.4(3) & 2.6(7) \\
-            & $\mathrm{CST}_{\mathrm{C}5}$ & 1.23(1) & 1.99(2) && 1.29(1) & 1.17(1) && 1.29(1) & 1.43(1)\vspace{2px}\\
+            & $\mathrm{CST}_{\mathrm{C}5}$\footnote{No bootstrap fitting due to too few simulated samples} & 1.23(1) & 1.99(2) && 1.29(1) & 1.17(1) && 1.29(1) & 1.43(1)\vspace{2px}\\
             \bottomrule
             \end{tabular}
             \caption{Scaling exponents for avalanche size, duration and area.}
             \label{tab:scalingExp}
         \end{table}
     \end{frame}
+    
+    \begin{frame}{Analysis discussion -- Scaling exponents}
+    	\only<1-3>{
+    	\begin{itemize}
+    		\myitemsep
+    		\item<1-> {Comparison of results to literature possible, but:
+	    		\begin{itemize}
+	    			\item<2->[$\bullet$] Many different literature values of scaling exponents from various papers from the early 90's until today
+	    			\item<2->[$\bullet$] Many different models used (\textbf{Abelian BTW}, Non-abelian BTW, etc.)
+	    			\item<2->[$\bullet$] Usually only the sets $\tau,\ D$ and $\alpha,\ Z$ are stated
+	    		\end{itemize}} 
+    		\item<3> Generally, scaling exponents should satisfy $\tau, \alpha \ge 1$ for the BTW model
+    		\item<3> Example in 2D: $\tau = \SI{1.2(1)}{},\ \alpha =\SI{1.16(3)}{}$ from \cite{SOC-book} coincide with our simulations $\tau = \SI{1.19(9)}{},\ \alpha =\SI{1.21(2)}{}$.
+    		\item<3> Scaling exponents of the BTW model determined in this project generally coincide with most of the BTW literature values within their $\sigma$
+    	\end{itemize}
+    	}
+    	\only<4>{
+    	\begin{itemize}
+    		\myitemsep
+    		\item {Custom model partially deviates from BTW model: This is most prominent in the dimension exponents e.g. of the avalanche area:
+    			\begin{itemize}
+    				\mysubitemsep
+    				\item[$\bullet$] 2D area dimension exponent $T_{\mathrm{BTW}} = \SI{1.9(2)}{}$ vs. $T_{\mathrm{CST}} = \SI{1.0(1)}{}$ 
+    				\item[$\Rightarrow$] {Custom avalanches are mostly 1 dimensional; That's also what we see:
+    					\begin{figure}[h]
+    						\centering
+    						\subfigure[BTW 2D]{\includegraphics[width=0.275\textwidth]{Avalanche_2d_btw_3.png}}
+    						\subfigure[CST 2D]{\includegraphics[width=0.275\textwidth]{Avalanche_2d_custom_1.png}}
+    					\end{figure}
+    					}
+    			\end{itemize}}
+   			\item Scaling exponents $\tau, \alpha$ of the custom model coincide with BTW
+   		\end{itemize}
+    	}
+    \end{frame}
+    
+    \begin{frame}{Analysis discussion -- Issues}
+    	\begin{overlayarea}{\textwidth}{\textheight}
+    	$\Rightarrow$ The main issue is the lack of computational resources: Inherits several consequences:\\ \vspace{1cm}
+    	\begin{minipage}[l]{0.585\textwidth}
+    		\begin{itemize}
+    			\only<1>{
+    			\item Deviation from linear trend of $2^{\mathrm{nd}}$ moment for large lattices $L\ge 80$ in 3D:
+    			\item[$\Rightarrow$] \# of drives of the simulation $<$ \# lattice sites: Not sufficient
+    			\item[$\Rightarrow$] 1 simulation of $100^3$ lattice, $10^5$ drives $\approx$ \textbf{28 hours}
+	    		}
+	    		\only<2>{
+    			\item Only samples for $L \le 40$ for custom model in 3D:
+    			\item[$\Rightarrow$] Bootstrap fitting failed, external fitting library used
+    			\item[$\Rightarrow$] No reliable estimation of uncertainty possible 
+	    		}
+	    		\only<3>{
+    			\item 10 samples for each lattice size $L_N$ already very few:
+    			\item[$\Rightarrow$] Double bootstrap needed
+    			\item[$\Rightarrow$] Many bootstrap samples need to be drawn
+	    		}
+    		\end{itemize}
+    	\end{minipage}
+    	\begin{minipage}[r]{0.4\textwidth}
+    		\centering
+    		\only<1>{
+    		\includegraphics[width=\textwidth]{moment_analysis_size_3d_btw_fit.pdf}
+	    	}
+	    	\only<2>{
+	    	\includegraphics[width=\textwidth]{moment_analysis_size_3d_custom_crit_slope_5_fit.pdf}
+	    	}
+   		\end{minipage}
+	   	\end{overlayarea}
+   	\end{frame}
+   	
+   	\begin{frame}{Summary and Conclusion}
+   		\only<1>{
+   		Within this project:\\
+   		\begin{itemize}
+   			\item {Two models of cellular automata for sandpile dynamics have been implemented
+	   			\begin{itemize}
+	   				\item[$\bullet$] The BTW model
+	   				\item[$\bullet$] A custom model
+	   			\end{itemize}
+	   			}
+	   		\item The characteristics, namely their sets of critical scaling exponents, have been determined  
+   			\item The statistics were gathered for 2 and 3 dimensional lattices
+   			\item The obtained results coincide with most of the values given in the literature
+   		\end{itemize}
+   		}
+   		\only<2>{
+		Conclusions:\\
+		\begin{itemize}
+			\item {More computational recourses would improve results:
+				\begin{itemize}
+					\item[$\bullet$] Simulate more samples and increase number of total drives
+					\item[$\bullet$] Go to higher dimensions and lattice sites
+				\end{itemize}
+			}
+			\item More detailed look / more configurations of the custom model would be interesting 
+		\end{itemize}
+		} 
+   	\end{frame}
+	
+	{\usebackgroundtemplate%
+		{%
+			\includegraphics[width=\paperwidth,height=\paperheight]{bkg1.pdf}%
+		}
+		\begin{frame}
+			\centering \Huge \color{ublue} Thank you!% for your attention!
+			\thispagestyle{empty}
+			\addtocounter{framenumber}{-1}
+		\end{frame}
+	}
+	   	
+   	\begin{frame}[allowframebreaks]{Bibliography}
+   		\printbibliography
+   	\end{frame}
+   	
+   	{\usebackgroundtemplate%
+   		{%
+   			\includegraphics[width=\paperwidth,height=\paperheight]{bkg1.pdf}%
+   		}
+   		\begin{frame}
+   			\centering \Huge \color{ublue} Backup slides
+   			\thispagestyle{empty}
+   			\addtocounter{framenumber}{-1}
+   		\end{frame}
+   	}
+   	
+   	\backupbegin
+   	
+   	\begin{frame}{Literature values}
+   		\begin{minipage}[l]{0.3\textwidth}
+   			\captionof{figure}{Literature values from various papers gathered in \cite{SOC-book}}
+   		\end{minipage}
+   		\begin{minipage}[r]{0.65\textwidth}
+   			\includegraphics[height=0.9\textheight]{literature.png}
+   		\end{minipage}
+   	\end{frame}
+   	\backupend
 
 \end{document}
