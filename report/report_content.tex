@@ -1,7 +1,7 @@
 \begin{abstract}
 \dots\\
 \dots\\
-\dots
+\dots%TODO abstract
 \end{abstract}
 
 \maketitle
@@ -50,15 +50,15 @@ temperature.
 
 The criticality of the system leads to scale invariant properties. For instance clusters of the same spin direction
 will form and the size distribution of these clusters follows a simple power law. A power law distribution implies
-scale invariance, where scale invariance means that the dynamics of the considered system does not change if the system
+scale invariance, where scale invariance means that the dynamics of the considered system do not change if the system
 is scaled by some global factor. In particular the observables' distribution functions keep the same form.
 
 The crucial difference of this definition of criticality and the criticality observed in the case of the sandpile model
 is that sandpiles will evolve into a critical state without tuning of any critical parameter.
 If enough sand is deposited into a sandbox or, respectively, enough iteration steps of the computer model are performed
 it reaches an equilibrium state by itself with a fixed average slope. This self-organization into a critical state
-always happens, independently of the actual detailed model parameters.\footnote{Note that the slope can still depend
-on these parameters.} Thus this phenomenon is called \enquote{self-organized criticality}.
+always happens, independently of the actual detailed model parameters\footnote{Note that the slope can still depend
+on these parameters.}. Thus this phenomenon is called \enquote{self-organized criticality}.
 
 \subsection{Scaling exponents}
 \label{sec:th:scaling}
@@ -73,9 +73,9 @@ P^{Y}(\lambda y) = f(\lambda) \times P^{Y}(y)
 due to the assumed scale invariance.
 
 As scale invariance is suspected as a main property of SOC models in general, one is mainly interested in studying
-these distribution functions to proof this. To do this a theoretical prediction is necessary first.
+these distribution functions to test this hypothesis. To do this a theoretical prediction is necessary first.
 In the simplest approximation the distribution function of an observable $\hat{Y}$ in a scale invariant SOC model
-is assumed to be a simple power law
+is assumed to follow a simple power law
 \begin{equation}\label{eq:simpleScaling}
 P^{Y}(y) \sim y^{-\rho}
 \end{equation}
@@ -84,7 +84,7 @@ Here $\rho$ is called the \emph{critical exponent} of the observable $\hat{Y}$.
 
 However, in a real implementation of the sandpile model or any other SOC model one has to deal with finite system sizes
 since infinitely large systems can neither be simulated nor do they exist in nature.
-A finite system size limits the validity of Eq~\eqref{eq:simpleScaling} because for instance avalanche sizes on a
+A finite system size limits the validity of Equation~\eqref{eq:simpleScaling} because for instance avalanche sizes on a
 sandpile are naturally limited to the size of the sandpile itself. Thus a more sophisticated description of scaling
 has to be used, so-called \emph{finite-size scaling} as described in \cite{SOC-book}:
 \begin{equation}\label{eq:finiteSizeScaling}
@@ -102,7 +102,7 @@ One possibility to obtain the finite-size scaling exponents $\rho$ and $K$ from 
 is via their moments $\langle y^n\rangle$. These moments follow from Equation~\eqref{eq:finiteSizeScaling} by integration
 and as is shown in~\cite{SOC-book} in the limit of an infinitely large lattice this yields
 \begin{equation}\label{eq:momentScaling}
-\langle y^n\rangle \xrightarrow[L\to\infty]{} a g^{Y}(0) (bL)^{\sigma_n}, \sigma_n := K(1+n-\rho),
+\langle y^n\rangle(L) \xrightarrow[L\to\infty]{} a g^{Y}(0) (bL)^{\sigma_n},\quad \sigma_n := K(1+n-\rho),
 \end{equation}
 with $g^{Y}(0)=\mathrm{const.}$ a definite integral containing the scaling function $G^{Y}$.
 Equation~\ref{eq:momentScaling} is as an approximation also valid for finite but large enough lattice sizes where
@@ -127,14 +127,14 @@ increasing the value of a randomly picked lattice site.
 
 \subsection{Implementation of sandpile cellular automata}
 \label{sec:sandpileImplementation}
-In general a cellular automaton for a sandpile in $\mathcal{N}$ dimensions works on an $\mathcal{N}-1$ dimensional
+In general a cellular automaton for a sandpile in $\mathcal{N}$ real dimensions works on an $\mathcal{N}-1$ dimensional
 lattice where each lattice site stands for a stack of sand grains in the left dimension. That means for example that
 a real sandpile, which is three dimensional, is simulated on a two dimensional lattice reflecting the ground as $x$-$y$
 plane. The entry on each site then characterizes how many grains of sand are stacked in the $z$ direction.
 We will denote these lattice entries by the variable $s(\vec{r})$ in the following, with the discrete lattice sites
 $\vec{r}=(x,y,\ldots)^\top$.
 
-It can be either chosen to store the actual amount of grains in the entry $z$ or the slope with respect to the
+It can be either chosen to store the actual amount of grains as the entry $s$ or the slope with respect to the
 vicinity of the stack. Both choices enable for sufficient characterization and simulation of the microscopic
 dynamics of the sandpile. Choosing the slope entries, however, has the drawback that the model will then be
 non-isotropic anymore, as will become clear in the following, whereas storing the actual heights can make the model
@@ -181,7 +181,7 @@ physical, relaxation algorithm is used.
 \end{figure}
 
 \textbf{Relaxation} takes place after a driving step has performed. If the sandpile becomes too steep somewhere on the
-lattice, i.e. $s > s_{\mathrm{crit}}$ with the \emph{critical slope} $s_{\mathrm{crit}}$, after sand has been added
+lattice, i.e. $s \geq s_{\mathrm{crit}}$ with the \emph{critical slope} $s_{\mathrm{crit}}$, after sand has been added
 the pile gets instable. It locally collapses and thus creates avalanches of sand sliding down the pile until the slope
 recovers to a non-critical value again. In the BTW model the critical slope is usually fixed to
 $s_{\mathrm{crit}}=2\times\operatorname{Dim}\left[\vec{r}\right]$. For each site with critical slope the following
@@ -189,48 +189,50 @@ relaxation algorithm is performed:
 \begin{itemize}
 \item $s(\vec{r}) \mapsto s(\vec{r}) - 2\times\operatorname{Dim}\left[\vec{r}\right]$
 \item $s(\vec{r}\pm\vec{\mathrm{e}}_i) \mapsto s(\vec{r}\pm\vec{\mathrm{e}}_i) + 1,
-\quad \forall i\in\operatorname{Dim}\left[\vec{r}\right]$
+\quad \forall i\in[1,\operatorname{Dim}\left[\vec{r}\right]]$
 \end{itemize}
 If after the relaxation any site is still critical or if any other site has become critical in the process of
 relaxation the relaxation procedure is repeated until there is no critical site on the lattice anymore.
-Every call of the relaxation routine counts as one unit time step.
+Every repetition of the relaxation procedure counts as one unit time step.
 
 To translate this relaxation routine to the picture of a real sandpile it calculates the local slope of the sandpile as
-the sum of the local slope ($=\mathrm{stack height difference}$) in $x$-direction and the local slope in $y$-direction.
+the sum of the local slope (= stack height difference) in $x$-direction and the local slope in $y$-direction.
 If this summed slope reaches the critical slope value $s_{\mathrm{crit}}$, for each dimension one grain of sand is
-redistributed from the site to its downhill nearest neighbors This results in a consistent description of a lattice
+redistributed from the site to its downhill nearest neighbors. This results in a consistent description of a lattice
 containing slopes and the two procedures for driving and relaxation.
 
 The fact that the slopes $s$ are only integer numbers naturally implies that they cannot contain any information about
 the direction of the slope. If one takes the real sandpile picture from above into account again it becomes clear that
-the slope direction is fixed to the same diagonal for every lattice point. This is a inherent feature of the BTW model
+the slope direction is fixed to the same diagonal for every lattice point. This is an inherent feature of the BTW model
 as a result of the reduction to storing slopes instead of stack heights. It creates a preferred direction for avalanches
 and thus makes the model \emph{non-isotropic} such that the BTW critical state must be principally thought of as a
 \enquote{diagonal hillside}.
 
 \subsubsection{The custom model}
 The second approach for the sandpile simulations uses the local height or number of sand grains as lattice entries.
-Thus it can circumvent the problem of the BTW model to be non isotropic because the slopes can be directly calculated
+Thus it can circumvent the problem of the BTW model to be non-isotropic because the slopes can be directly calculated
 from the heights in every direction.
 The overall implementation of the custom model cellular automaton essentially follows the implementation of BTW model.
 Since in the custom model the lattice entries $s(\vec{r})$ are heights instead of slopes the relaxation procedure
-works differently compared to the BTW model though.
-For the slope between two neighboring sites $\vec{r}_1$ and $\vec{r}_2$ the absolute difference
-$s(\vec{r}_1)-s(\vec{r}_2)$ is used. If the absolute value of this slope reaches the critical value $q_{\mathrm{crit}}$
-the site with the higher stack is called critical site. If now one site is critical with respect to at least one of its
-nearest neighbors the stack is considered unstable and about to collapse. All excess sand grains with respect to the
-neighbor with the least height will then be redistributed to all nearest neighbors to which the slope is at least
-critical until none of slopes to the neighbors is critical anymore.
-This represents one unit time step. Since grains have been redistributed and slopes could have changed, in the next
-relaxation step all nearest neighbors of the critical site are checked if they have become critical. Like in the BTW
-model this is repeated until no site is critical anymore and the avalanche stops.
+works differently compared to the BTW model, though.
+For the slope between two neighboring sites $\vec{r}_1$ and $\vec{r}_2$ the difference $s(\vec{r}_1)-s(\vec{r}_2)$ is
+used. If the absolute value of this slope reaches the critical value $q_{\mathrm{crit}}$ the site with the higher
+stack is called critical site. The critical slope $q_{\mathrm{crit}}$ is a free parameter in this custom model.
+
+If now one site is critical with respect to at least one of its nearest neighbors the stack is considered unstable
+and about to collapse. All excess sand grains with respect to the neighbor with the least height will then be
+redistributed to all nearest neighbors to which the slope is at least critical until none of slopes to the neighbors
+is critical anymore. This represents one unit time step.
+Since grains have been redistributed and slopes could have changed, in the next relaxation step all nearest neighbors
+of the critical site are checked if they have become critical. Like in the BTW model this is repeated until no site
+is critical anymore and the avalanche stops.
 
 The driving procedure simply consists of increasing $s(\vec{r})$ about $1$.
 
 In the custom model it is possible to choose different boundary conditions for each edge of the lattice independently.
 It can be chosen between \emph{open} and \emph{closed} boundary conditions. The closed boundaries basically model an
-infinitely high wall that do not let any sand grains pass whereas the open boundaries can be thought of as the edge of
-a table where any excess sand can just drop from the table. This means that sand grains can fall of the lattice at
+infinitely high wall that does not let any sand grains pass whereas the open boundaries can be thought of as the edge
+of a table where any excess sand can just drop from the table. This means that sand grains can fall of the lattice at
 open boundaries but accumulate at closed boundaries.
 In order to make the comparison of the BTW model and the custom model possible the configuration of
 $\operatorname{Dim}\left[\vec{r}\right]$ neighboring open boundaries meeting at one corner of the lattice and
@@ -249,7 +251,7 @@ For the automaton algorithms we precisely define all four observables as follows
 \item[Size] The number of critical sites accumulated over all repetitions of the relaxation procedure.
 \item[Duration] The number of unit time steps from the triggering of the avalanche until it stops. The unit time step
                 corresponds to one repetition of the relaxation routine.
-\item[Area] The $\operatorname{Dim}\left[\vec{r}\right]-1$ dimensional volume that contains the avalanche,
+\item[Area] The $\operatorname{Dim}\left[\vec{r}\right]$ dimensional volume that contains the avalanche,
             i.e. the number of lattice sites that took part in the avalanche.
 \item[Linear size] The maximum (euclidean) distance between any pair of sites that took part in the avalanche.
 \end{description}
@@ -275,7 +277,7 @@ by the main program. The stored data then represent samples of the underlying di
 
 Given a sample of one of these distributions, the distribution's first and second moment is estimated via
 \begin{equation}
-\langle y^n\rangle(L) := \int\!\mathrm{d}y\, y^n P^{Y}(y) \simeq \sum_i y_i^n \Big/ \sum_i y_i^0,\quad i=1,2,
+\langle y^n\rangle(L) := \int\!\mathrm{d}y\, y^n P^{Y}(y) \simeq \sum_i y_i^n \Big/ \sum_i y_i^0,\quad n=1,2,
 \end{equation}
 where $L$ is the lattice size used in the simulation and $y_i$ the measured value of $\hat{Y}$ in the $i$-th avalanche.
 According to section~\ref{sec:th:scaling} we plot $\ln\left(\langle y^n\rangle(L)\right)$ against $\ln\left(L\right)$
@@ -357,7 +359,7 @@ a superposition of the slopes in $x$- and $y$-direction.
 \begin{figure}[htb]
     \centering
     \includegraphics[width=\linewidth]{sandboxes/CST_100x100_cs7_slopeBox}
-    \caption{Critical custom model sandbox from Fig.~\ref{fig:cstSandbox} that has been transformed from heights to
+    \caption{Critical custom model sandbox from Fig.~\ref{fig:customSandbox} that has been transformed from heights to
              BTW-compatible summed slopes. Traces of recent avalanches are clearly visible.}
     \label{fig:cstSlopebox}
 \end{figure}
@@ -375,7 +377,7 @@ Traces of the most recent of these avalanches can be even seen in the sandbox it
 
 Analog to the case of the BTW model we show the linear fits of the first and second moment of the avalanche size
 distribution for a two-dimensional sandbox in Figure~\ref{fig:customSizeFit}.
-The straight lines do not fit to the data as good as the ones for the custom model but for different runs of the
+The straight lines do not fit to the data as good as the ones for the BTW model but for different runs of the
 bootstrap fitting the slope and fit quality changed noticeable. This seems to be caused by the limited amount of only
 ten measurements per lattice size $L$, which might not represent an ideal base sample for the bootstrap.
 The figure shows the fit run that yielded the smallest error on the resulting exponents.
@@ -390,15 +392,16 @@ The figure shows the fit run that yielded the smallest error on the resulting ex
 \end{figure}
 
 The resulting scaling exponents for two- and three-dimensional lattices are summarized in Table~\ref{tab:scalingExp}
-together with the results for the BTW model. Results for two different values of the critical slope parameter of the
+together with the results for the BTW model. Results for different values of the critical slope parameter of the
 custom model are given.
-
+%
 \renewcommand{\arraystretch}{1.5}
 \begin{table}[htb]
     \centering
     \caption{Scaling exponents for avalanche size, duration and area for two- and three-dimensional (2D/3D)
              simulations of the BTW model (BTW) and the custom model (CST). The free parameter critical slope
              $q_{\mathrm{crit}}$ of the custom model is denoted by the index C\,$q_{\mathrm{crit}}$.}
+    \begin{minipage}{\linewidth}
     \begin{tabular}{lSScSScSSr}
     \toprule
     \multirow{2}{*}{Model} & \multicolumn{2}{c}{Size} && \multicolumn{2}{c}{Duration} && \multicolumn{2}{c}{Area} & \\
@@ -413,9 +416,12 @@ custom model are given.
     \midrule
     $\mathrm{BTW}$ & 1.3(1) & 2.5(3) && 1.45(3) & 1.41(6) && 1.4(3) & 2.6(7) &
         \hspace{-20px}\rdelim\rbrace{2}{0mm}[$3$D] \\
-    $\mathrm{CST}_{\mathrm{C}5}$ &  &  &&  &  &&  & \vspace{2px} & \\
+    $\mathrm{CST}_{\mathrm{C}5}$\footnote{Values only based on simulations for lattice sizes $10,20,30,40$ due to
+                                          limited computational resources.}
+                   & 1.23(1) & 1.99(2) && 1.29(1) & 1.17(1) && 1.29(1) & 1.43(1)\vspace{2px} & \\
     \bottomrule
     \end{tabular}
+    \end{minipage}
     \label{tab:scalingExp}
 \end{table}
 %--- depending on in which column the table appears use braces on the left- or right-hand side ---
@@ -424,6 +430,7 @@ custom model are given.
 %    \caption{Scaling exponents for avalanche size, duration and area for two- and three-dimensional (2D/3D)
 %             simulations of the BTW model (BTW) and the custom model (CST). The free parameter critical slope
 %             $q_{\mathrm{crit}}$ of the custom model is denoted by the index C\,$q_{\mathrm{crit}}$.}
+%    \begin{minipage}{\linewidth}
 %    \begin{tabular}{llSScSScSS}
 %    \toprule
 %    & \multirow{2}{*}{Model} & \multicolumn{2}{c}{Size} && \multicolumn{2}{c}{Duration} && \multicolumn{2}{c}{Area} \\
@@ -438,9 +445,12 @@ custom model are given.
 %    \midrule
 %    \hspace{-20px}\ldelim\lbrace{2}{0mm}[$3$D] &
 %      $\mathrm{BTW}$ & 1.3(1) & 2.5(3) && 1.45(3) & 1.41(6) && 1.4(3) & 2.6(7) \\
-%    & $\mathrm{CST}_{\mathrm{C}5}$ &  &  &&  &  &&  & \vspace{2px} \\
+%    & $\mathrm{CST}_{\mathrm{C}5}$\footnote{Values only based on simulations for lattice sizes $10,20,30,40$ due to
+%                                          limited computational resources.}
+%                   & 1.23(1) & 1.99(2) && 1.29(1) & 1.17(1) && 1.29(1) & 1.43(1)\vspace{2px} \\
 %    \bottomrule
 %    \end{tabular}
+%    \end{minipage}
 %    \label{tab:scalingExp}
 %\end{table}
 
@@ -448,15 +458,87 @@ custom model are given.
 \section{Discussion}
 \label{sec:discussion}
 
-%reference p.92
+The sandboxes of both models clearly self-organized into some equilibrium state with temporally constant average slope
+and overall appearance. The extraction of scaling exponents based on the finite-size scaling assumption
+(Equation~\eqref{eq:finiteSizeScaling}) was possible and even naive power law fits to the histogrammed distributions
+indicate scale invariance (see Appendix~\ref{app:naiveFit}).
+This confirms the occurrence of SOC in the BTW model as already previosly observed by many other researches
+and it shows that SOC also appears in our custom sandpile model.
+
+A SOC state seems to be develop in the custom model independently of the value of the critical slope parameter.
+Since we only simulated for $q_{\mathrm{crit}}=5$ and $q_{\mathrm{crit}}=7$ we suggest, however, to check this
+again for a much broader range of critical slopes.
+
+The avalanches look quite different for the different models. The BTW avalanches appear much more spread over the
+lattice than the custom model ones. As one can see in Figure~\ref{fig:customSandbox} the choice of boundary conditions
+in the custom model did not completely yield the desired \enquote{diagonal hillside} but rather two split off hillsides
+towards the $x$- and $y$-axes. We believe that a further modification of the custom model, namely to allow for dropping
+grains to the diagonal nearest neighbors, would yield improved results.
+This would also describe the physics more accurate.
+
+There were virtually no large avalanches observed for the three-dimensional custom model. This is possibly due to a
+too small critical slope as we have only simulated for $q_{\mathrm{crit}}=5$ in three dimensions.
+%TODO [due to limited computational resources]?
+The critical slope in the BTW model is the fixed parameter of $s_{\mathrm{crit}}=2\times\operatorname{Dim}
+\left[\vec{r}\right]$ and is thus automatically increased for larger dimensions.
+Simulations in three dimensions with $q_{\mathrm{crit}}\gg 5$ are advisable to achieve improved results.
+
+The bootstrap fits for the extraction of the scaling exponents turned out to be not always reliable. Multiple calls
+of the fit routine yielded varying fit qualities and varying scaling exponents so we decided to take the best quality
+fits with the smallest errors on the scaling epxonents out of many fit runs. However, the errors are still somewhat large
+and we suggest to increase the number of simulations for each moment $\langle y^n\rangle(L)$ to a value considerably
+larger than only ten.
+
+We obtained particularly bad fitting to the measurement points for the three-dimensional BTW model at large lattice
+sizes (see Figure~\ref{}). It is yet unclear if the scaling breaks down at large lattice sizes or if the $100000$ drives
+were just too few drives compared to the number of lattice entries $=L^3$. We suspect that this could be resolved by
+increasing the number of drives to the order of $1000000$. But care must be taken here since the simulations with less
+drives and less runs can already take several hours for each lattice size.
+
+Large lattice sizes in three dimensions for the custom model could not be investigated due to limited computational
+resources.
+
+
+%TODO scaling exponents; reference p.92 \cite{SOC-book}
+Scaling BTW:
+$\rightsquigarrow$ many different values for scaling exponents in the literature, different models / model details
+$\rightsquigarrow$ essentially in accordance with our measurements
+$\rightsquigarrow$ some deviations for 3D, too few drops, see above, can be seen in moment plots
+
+Scaling Custom:
+$\rightsquigarrow$ no reference values, own development
+$\rightsquigarrow$ compared to BTW $\rightsquigarrow$ tendency to smaller, less spreading avalanches corresponds to
+                   larger $\rho$s and smaller $K$s \checkmark $\rightsquigarrow$ suggest (again) diagonal dropping
+                   (see above)
+
 
 \section{Summary}
 \label{sec:summary}
 
+\dots%TODO summary
+
 
 \appendix*
 
-\section{}
-\label{sec:}
-\subsection{}
-\dots
+\section{Further useful figures}
+\label{sec:app}
+
+\subsection{Histogrammed power law scaling}
+\label{app:naiveFit}
+\begin{figure}[!h]%TODO caption
+    \centering
+    \includegraphics[width=\linewidth]{naive_fits/naive_fit2_report}
+    \caption{}
+    \label{fig:naiveFit}
+\end{figure}
+
+\subsection{\dots}
+\label{app:naiveFit}
+\begin{figure}[!h]%TODO caption
+    \centering
+    \includegraphics[width=\linewidth]{moment_analysis_size_3d_btw_fit_report}
+    \caption{Fitting of first and second avalanche size moments for a three-dimensional sandbox (BTW model).
+             The second moments show noticeable deviations from the straight line fit for large lattice sizes.
+             Error bars have been omitted for reasons of clarity.}
+    \label{fig:btwSizeFit}
+\end{figure}
