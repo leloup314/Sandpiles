@@ -37,7 +37,7 @@
 \usepackage[varg]{txfonts}
 \usepackage{hyperref}
 \usepackage{xcolor}
-\usepackage{siunitx}
+\usepackage[table-format=1.4, separate-uncertainty=false]{siunitx}
 \usepackage{fancyhdr}
 \usepackage{colortbl}
 \usepackage{geometry}
@@ -50,6 +50,8 @@
 \usepackage{animate}
 \usepackage{float}
 \usepackage{pdfpages}
+\usepackage{multirow}
+\usepackage{bigdelim}
 \usepackage{floatflt}
 \usepackage{overpic}
 \usepackage{scalerel}
@@ -85,6 +87,7 @@
 %\setbeamertemplate{navigation symbols}{}
 
 \title[Sandpiles]{Cellular Automata for Sandpiles}
+\subtitle{An Example of Self-organized criticality}
 \author[M. Frohne \& P. Wolf]{Markus Frohne\\ \texttt{\textcolor{gray}{markusfrohne@uni-bonn.de}}\\ \vspace{0.33cm} Pascal Wolf\\ \texttt{\textcolor{gray}{pwolf@uni-bonn.de}}}
 \date{March 15$^\text{th}$, 2018}
 
@@ -107,27 +110,27 @@
 	\begin{frame}{Outline of talk}
 		\begin{itemize}
 			\myitemsep
-			\item {Introduction:
+			\item Motivation
+			\item {Theory
 				\vspace{0.22cm}
 				\begin{itemize}
 					\mysubitemsep
-					\item[$\bullet$] Motivation
-					\item[$\bullet$] Self-organized criticality (\textbf{SOC})
-				\end{itemize}
-				}
-			\item {Theory and simulation:
-				\vspace{0.22cm}
-				\begin{itemize}
-					\mysubitemsep
-					\item[$\bullet$] Cellular automata for sandpile dynamics: The \texttt{Bak-Tang-Wiesenfeld} (\textbf{BTW}) and custom model
+					\item[$\bullet$] Self-organized criticality (\textbf{SOC}), cellular automata
+					\item[$\bullet$] The \texttt{Bak-Tang-Wiesenfeld} (\textbf{BTW}) and custom model
 				\end{itemize}}
-			\item Analysis
-			\item {Results
+			\item {Simulation
 				\vspace{0.22cm}
 				\begin{itemize}
 					\mysubitemsep
-					\item[$\bullet$] Discussion
-					\item[$\bullet$] Comparison of models
+					\item[$\bullet$] Visualization of simulated data
+				\end{itemize}}
+			\item {Analysis 
+				\vspace{0.22cm}
+				\begin{itemize}
+					\mysubitemsep
+					\item[$\bullet$] Methods
+					\item[$\bullet$] Results
+					\item[$\bullet$] Discussion \& Comparison
 				\end{itemize}}
 			\item Summary
 		\end{itemize}
@@ -138,7 +141,27 @@
 			\includegraphics[width=\paperwidth,height=\paperheight]{bkg1.pdf}%
 		}
 		\begin{frame}
-			\centering \Huge \color{ublue} Introduction
+			\centering \Huge \color{ublue} Motivation
+			\thispagestyle{empty}
+			\addtocounter{framenumber}{-1}
+		\end{frame}
+	}
+	
+	\begin{frame}{Motivation}
+		Critical phenomena are studied widely  
+		The \text{Ising} model consists of a collective of magnetic moments represented by spins $\vec{s}$ on a lattice:
+		\begin{itemize}
+			\item Phase transition at critical temperature $T_c$
+			\item 
+		\end{itemize}
+	\end{frame}
+	
+	{\usebackgroundtemplate%
+		{%
+			\includegraphics[width=\paperwidth,height=\paperheight]{bkg1.pdf}%
+		}
+		\begin{frame}
+			\centering \Huge \color{ublue} Theory
 			\thispagestyle{empty}
 			\addtocounter{framenumber}{-1}
 		\end{frame}
@@ -149,7 +172,7 @@
 			\includegraphics[width=\paperwidth,height=\paperheight]{bkg1.pdf}%
 		}
 		\begin{frame}
-			\centering \Huge \color{ublue} Simulation results and analysis
+			\centering \Huge \color{ublue} Simulations \\ \Large Visualization of data and analysis methods
 			\thispagestyle{empty}
 			\addtocounter{framenumber}{-1}
 		\end{frame}
@@ -160,17 +183,17 @@
 			\captionsetup{width=0.9\textwidth}
 			\centering
 			\only<1>{
-			\subfigure[BTW model]{\animategraphics[width=0.475\textwidth, loop, autoplay]{10}{btw_random_}{1}{250}}
-			\subfigure[Custom model]{\animategraphics[width=0.475\textwidth, loop, autoplay]{10}{custom_random_}{1}{250}}
-			\caption{Avalanche evolution in a 2D sandbox of length 50 (\textbf{random} drives)}}
-			\only<2>{
 			\subfigure[BTW model]{\animategraphics[width=0.475\textwidth, loop, autoplay]{10}{btw_center_}{1}{250}}
 			\subfigure[Custom model]{\animategraphics[width=0.475\textwidth, loop, autoplay]{10}{custom_center_}{1}{250}}
 			\caption{Avalanche evolution in a 2D sandbox of length 50 (\textbf{center} drives)}}
+			\only<2>{
+			\subfigure[BTW model]{\animategraphics[width=0.475\textwidth, loop, autoplay]{10}{btw_random_}{1}{250}}
+			\subfigure[Custom model]{\animategraphics[width=0.475\textwidth, loop, autoplay]{10}{custom_random_}{1}{250}}
+			\caption{Avalanche evolution in a 2D sandbox of length 50 (\textbf{random} drives)}}
 		\end{figure}
 	\end{frame}
 	
-	\begin{frame}{Sandpile dynamics -- Avalanche formation}
+	\begin{frame}{Sandpile dynamics -- Avalanche formations}
 		\begin{figure}[h]
 			\captionsetup{width=0.9\textwidth}
 			\begin{center}
@@ -186,45 +209,126 @@
 		\end{figure}
 	\end{frame}
 	
-	\begin{frame}{Sandpile dynamics -- Power law scaling}
+	
+	{\usebackgroundtemplate%
+		{%
+			\includegraphics[width=\paperwidth,height=\paperheight]{bkg1.pdf}%
+		}
+		\begin{frame}
+			\centering \Huge \color{ublue} Analysis
+			\thispagestyle{empty}
+			\addtocounter{framenumber}{-1}
+		\end{frame}
+	}
+	
+	\begin{frame}{Analysis method -- Naive fit}
+		\begin{itemize}
+			\item {Straight line fit for initial verification of power-law scaling behavior
+				\begin{align*}
+				P^{(Y)}(y) \propto y^{-\rho}
+				\end{align*}
+				}
+			\item {$P^{(Y)}(y)$ deviates from linear trend due to \textit{finite size effects}:\\ $\Rightarrow$ \textit{moment analysis}}
+		\end{itemize}
 		\begin{figure}[h]
-			\captionsetup{width=0.9\textwidth}
-			\begin{center}
-				\subfigure[Duration]{\includegraphics[width=0.45\textwidth]{naive_fit.pdf}}
-				\subfigure[Size]{\includegraphics[width=0.45\textwidth]{naive_fit2.pdf}}
-				\caption{Power law scaling behavior of avalanche duration and size of the BTW model.}
-			\end{center}
+			\captionsetup{width=\textwidth}
+			\centering
+			\includegraphics[width=0.51\textwidth]{naive_fit.pdf}
+			\caption{Power law scaling behavior of avalanche duration of the BTW model.}
 		\end{figure}
 	\end{frame}
 	
-	\begin{frame}{Sandpile dynamics -- Moment analysis}
+	\begin{frame}{Analysis method -- Moment analysis}
 		\begin{itemize}
 			\myitemsep
 			\item {Define the so-called $n^{\mathrm{th}}$ \textit{moment} of the observable $y$ by
 				\begin{align*}
-				\left\langle y^n \right\rangle := \int_{0}^{\infty} dy y^n P^{(y)}(y)
+				\left\langle y^n \right\rangle = \int_{0}^{\infty} dy\ y^n P^{(y)}(y)
 				\end{align*}
 				where $P^{(y)}$ is the PDF of $y$.
-				}
-			\item {For $\lim{L \to \infty}$ the following relation holds:
+			}
+			\item {For $L \to \infty$ the following relation holds:
 				\begin{align*}
 				\left\langle y^n \right\rangle \propto L^{K\left(1 + n - \rho \right)} \qquad \text{with} \qquad K\left(1 + n - \rho \right) \equiv \sigma_n 
 				\end{align*}
-				where  $K,\ \rho$ is the \textbf{set of critical exponents} of the observable $y$. Taking the logarithm, this relation exhibits a linear trend with slope $\sigma_n$.
-				}
-			\item {Determination exponents of the $1^{\text{st}}$ and $2^{\text{nd}}$ moment $\sigma_1$ and $\sigma_2$ allows for the calculation of the set of critical exponents $K,\ \rho$:
+				where  $K,\ \rho$ is the set of scaling exponents of the observable $y$. Taking the logarithm, this relation exhibits a linear trend with slope $\sigma_n$.
+			}
+			\item {Determination scaling exponents of the $1^{\text{st}}$ and $2^{\text{nd}}$ moment $\sigma_1$ and $\sigma_2$ allows for the calculation of the set of critical exponents $K,\ \rho$:
 				\begin{align*}
 				K = \sigma_2 - \sigma_1 \quad , \quad \rho = \frac{2\sigma_2 - 3\sigma_1}{\sigma_2 - \sigma_1} 
 				\end{align*} 
-				}
+			}
 		\end{itemize}
 	\end{frame}
 	
-	\begin{frame}{Sandpile dynamics -- Moment analysis}
+	\begin{frame}{Analysis method -- Moment analysis}
 		\begin{itemize}
 			\myitemsep
-			\item[$\Rightarrow$] Simulate $N$ samples of $O$ and calculate the critical exponents $D,\ \rho$ within several \textit{bootstraps} to estimate their numerical value as well as standard deviation from it.
+			\item {General approach of moment analysis:
+				\begin{itemize}
+					\mysubitemsep
+					\item[$\bullet$] Simulate $R$ samples for $N$ lattice sizes $L_N$, record PDF of observables and calculate $\left\langle y^1 \right\rangle,\ \left\langle y^2 \right\rangle$
+					\item[$\bullet$] Draw \textit{random} bootstrap sample from $\left\langle y^1 \right\rangle_R,\ \left\langle y^2 \right\rangle_R$ for each $L_N$
+					\item[$\bullet$] Calculate covariance matrix for each bootstrap (\textbf{double bootstrap})
+					\item[$\bullet$] Linear fit within each bootstrap sample to calculate and store $K,\ \rho$
+					\item[$\bullet$] Estimate uncertainties by the standard deviation of $K,\ \rho$ from all bootstraps
+				\end{itemize}
+			}
+			\item[$\Rightarrow$] {Actual numbers for analysis in 2 and 3 dimensions:
+				\begin{itemize}
+					\mysubitemsep
+					\item[$\bullet$] $R = 10$
+					\item[$\bullet$] $N = R$ with $L_N \in \{10, 20, 30, 40, 50, 60, 70, 80, 90, 100\}$
+				\end{itemize}
+			}
 		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}{Analysis method -- Moment analysis}
+		\begin{figure}[htp]
+			\centering
+			\only<1>{
+			\subfigure[BTW]{\includegraphics[width=0.475\textwidth]{moment_analysis_size_2d_btw_fit.pdf}}
+			\subfigure[Custom]{\includegraphics[width=0.475\textwidth]{moment_analysis_size_2d_custom_crit_slope_7_fit.pdf}}
+			\caption{$1^{\mathrm{st}}$ and $2^{\mathrm{nd}}$ moments of one \textit{random} bootstrap sample for avalanche \textbf{size} and overall best linear fit in 2D.}
+			}
+			\only<2>{
+			\subfigure[BTW]{\includegraphics[width=0.475\textwidth]{moment_analysis_duration_2d_btw_fit.pdf}}
+			\subfigure[Custom]{\includegraphics[width=0.475\textwidth]{moment_analysis_duration_2d_custom_crit_slope_7_fit.pdf}}
+			\caption{$1^{\mathrm{st}}$ and $2^{\mathrm{nd}}$ moments of one \textit{random} bootstrap sample for avalanche \textbf{size} and overall best linear fit in 2D.}
+			}
+			\only<3>{
+			\subfigure{\includegraphics[width=0.475\textwidth]{moment_analysis_size_3d_btw_fit.pdf}}
+			\subfigure{\includegraphics[width=0.475\textwidth]{moment_analysis_duration_3d_btw_fit.pdf}}
+			\caption{$1^{\mathrm{st}}$ and $2^{\mathrm{nd}}$ moments of one \textit{random} bootstrap sample for avalanche \textbf{size} and overall best linear fit in 3D.}
+			}
+		\end{figure}
+	\end{frame}
+	
+	\begin{frame}{Analysis results -- Moment analysis}
+		\renewcommand{\arraystretch}{1.15}
+		\begin{table}[htb]
+			\centering
+			\begin{tabular}{llSScSScSS}
+				\toprule
+				& \multirow{2}{*}{Model} & \multicolumn{2}{c}{Size} && \multicolumn{2}{c}{Duration} && \multicolumn{2}{c}{Area} \\
+				\cmidrule{3-4} \cmidrule{6-7} \cmidrule{9-10}
+				&& {$\tau$} & {$D$} && {$\alpha$} & {$Z$} && {$\kappa$} & {$T$} \\
+				\cmidrule{2-10}
+				\cmidrule{2-10}
+				\hspace{-15px}\ldelim\lbrace{3}{0mm}[$2$D] &
+				$\mathrm{BTW}$ & 1.19(9) & 2.3(2) && 1.21(2) & 1.34(3) && 1.23(7) & 1.9(2) \\
+				& $\mathrm{CST}_{\mathrm{C}5}$ & 1.3(2) & 1.6(2) && 1.2(2) & 0.7(2) && 1.3(2) & 0.8(2) \\
+				& $\mathrm{CST}_{\mathrm{C}7}$ & 1.4(2) & 1.6(4) && 1.3(1) & 0.81(8) && 1.4(1) & 1.0(1) \\
+				\midrule
+				\hspace{-15px}\ldelim\lbrace{2}{0mm}[$3$D] &
+				$\mathrm{BTW}$ & 1.3(1) & 2.5(3) && 1.45(3) & 1.41(6) && 1.4(3) & 2.6(7) \\
+				& $\mathrm{CST}_{\mathrm{C}5}$ &  &  &&  &  &&  & \vspace{2px} \\
+				\bottomrule
+			\end{tabular}
+			\caption{Scaling exponents for avalanche size, duration and area.}
+			\label{tab:scalingExp}
+		\end{table}
 	\end{frame}
 		
 \end{document}
