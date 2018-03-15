@@ -1,7 +1,14 @@
 \begin{abstract}
-\dots\\
-\dots\\
-\dots%TODO abstract
+In this paper the dynamical behavior of systems in states of self-organized criticality is studied using the example
+of sandpiles in two and three dimensions. Two distinct models inheriting different characteristics are implemented,
+one of them being the Bak-Tang-Wiesenfeld model, the other an independent approach.
+The scaling exponents of the three observables \textit{size, duration} and \textit{area} of avalanches are determined
+for both models. This is achieved by conducting an analysis of their moments in order to extract the scaling exponents
+as well as their uncertainties. Apart from slight deviations in the custom model, due to its different nature,
+the results are in good accordance with the literature values obtained from a composition of many distinct authors.
+%Slight deviations from the literature occur in the custom model due to its different nature.
+%Further deviations for large lattice sizes in three dimensions are due to the limited amount of simulations,
+%time and resources.
 \end{abstract}
 
 \maketitle
@@ -32,9 +39,9 @@ results of a customized sandpile model.
 
 Section~\ref{sec:theory} starts with an overview on the theory behind self-organized criticality and in particular
 explains the scaling behavior governed by the scaling exponents.
-In section~\ref{sec:experiment} our implementation of the sandpile cellular automata is shown as well as
+In Section~\ref{sec:experiment} our implementation of the sandpile cellular automata is shown as well as
 the used methods for extracting the relevant parameters from the generated data.
-The results are presented in section~\ref{sec:results} and discussed in section~\ref{sec:discussion}.
+The results are presented in Section~\ref{sec:results} and discussed in Section~\ref{sec:discussion}.
 
 
 \section{Theory}
@@ -105,7 +112,7 @@ and as is shown in~\cite{SOC-book} in the limit of an infinitely large lattice t
 \langle y^n\rangle(L) \xrightarrow[L\to\infty]{} a g^{Y}(0) (bL)^{\sigma_n},\quad \sigma_n := K(1+n-\rho),
 \end{equation}
 with $g^{Y}(0)=\mathrm{const.}$ a definite integral containing the scaling function $G^{Y}$.
-Equation~\ref{eq:momentScaling} is as an approximation also valid for finite but large enough lattice sizes where
+Equation~\eqref{eq:momentScaling} is as an approximation also valid for finite but large enough lattice sizes where
 the observable's characteristic scale is much larger than a certain lower cutoff parameter. This lower cutoff may arise
 from the detailed microscopic interactions and the discreteness of the lattice, i.e. $L \gg 1$ for a lattice divided
 into discrete cells of edge length $1$ can in principle yield sufficiently good results.
@@ -260,16 +267,16 @@ lattice sizes $L$ and has thus been disabled during our full simulations. In thi
 on investigating the size, duration and area.
 
 To each of the three considered observables needs to be assigned a set of scaling exponents $(\rho,K)$
-according to Eq.\eqref{eq:finiteSizeScaling}:
+according to Equation~\eqref{eq:finiteSizeScaling}:
 \begin{description}
 \item[Size] critical exponent $\tau$, avalanche dimension $D$.
 \item[Duration] critical exponent $\alpha$, dynamical exponent $Z$.
 \item[Area] critical exponent $\kappa$, area dimension $T$.
 \end{description}
 
-As pointed out in section~\ref{sec:th:scaling} the exponents can be determined from the corresponding measured
+As pointed out in Section~\ref{sec:th:scaling} the exponents can be determined from the corresponding measured
 distributions. To obtain these distributions one full simulation run needs to be performed, which alternatingly performs
-a driving and triggering of a relaxation of the lattice as described in section~\ref{sec:sandpileImplementation}.
+a driving and triggering of a relaxation of the lattice as described in Section~\ref{sec:sandpileImplementation}.
 This happens until a certain given number of drives is reached. Each relaxation between two drives corresponds to an
 avalanche\footnote{Here we count no triggered avalanches as zero-size avalanches}. The desired observables are
 calculated within the relaxation procedure for each avalanche and the values for all avalanches are in the end stored
@@ -280,7 +287,7 @@ Given a sample of one of these distributions, the distribution's first and secon
 \langle y^n\rangle(L) := \int\!\mathrm{d}y\, y^n P^{Y}(y) \simeq \sum_i y_i^n \Big/ \sum_i y_i^0,\quad n=1,2,
 \end{equation}
 where $L$ is the lattice size used in the simulation and $y_i$ the measured value of $\hat{Y}$ in the $i$-th avalanche.
-According to section~\ref{sec:th:scaling} we plot $\ln\left(\langle y^n\rangle(L)\right)$ against $\ln\left(L\right)$
+According to Section~\ref{sec:th:scaling} we plot $\ln\left(\langle y^n\rangle(L)\right)$ against $\ln\left(L\right)$
 using simulations for different values of $L$ and apply a linear regression to the plot. This yields a straight line
 with slope $\sigma_n$, such that $\rho, K$ follow from:
 \begin{equation}
@@ -417,7 +424,8 @@ custom model are given.
     $\mathrm{BTW}$ & 1.3(1) & 2.5(3) && 1.45(3) & 1.41(6) && 1.4(3) & 2.6(7) &
         \hspace{-20px}\rdelim\rbrace{2}{0mm}[$3$D] \\
     $\mathrm{CST}_{\mathrm{C}5}$\footnote{Values only based on simulations for lattice sizes $10,20,30,40$ due to
-                                          limited computational resources.}
+                                          limited computational resources. Hence bootstrapped fitting failed and
+                                          external fit library was used.}
                    & 1.23(1) & 1.99(2) && 1.29(1) & 1.17(1) && 1.29(1) & 1.43(1)\vspace{2px} & \\
     \bottomrule
     \end{tabular}
@@ -446,7 +454,8 @@ custom model are given.
 %    \hspace{-20px}\ldelim\lbrace{2}{0mm}[$3$D] &
 %      $\mathrm{BTW}$ & 1.3(1) & 2.5(3) && 1.45(3) & 1.41(6) && 1.4(3) & 2.6(7) \\
 %    & $\mathrm{CST}_{\mathrm{C}5}$\footnote{Values only based on simulations for lattice sizes $10,20,30,40$ due to
-%                                          limited computational resources.}
+%                                            limited computational resources. Hence bootstrapped fitting failed and
+%                                            external fit library was used.}
 %                   & 1.23(1) & 1.99(2) && 1.29(1) & 1.17(1) && 1.29(1) & 1.43(1)\vspace{2px} \\
 %    \bottomrule
 %    \end{tabular}
@@ -465,7 +474,7 @@ indicate scale invariance (see Appendix~\ref{app:naiveFit}).
 This confirms the occurrence of SOC in the BTW model as already previosly observed by many other researches
 and it shows that SOC also appears in our custom sandpile model.
 
-A SOC state seems to be develop in the custom model independently of the value of the critical slope parameter.
+A SOC state seems to develop in the custom model independently of the value of the critical slope parameter.
 Since we only simulated for $q_{\mathrm{crit}}=5$ and $q_{\mathrm{crit}}=7$ we suggest, however, to check this
 again for a much broader range of critical slopes.
 
@@ -477,33 +486,38 @@ grains to the diagonal nearest neighbors, would yield improved results.
 This would also describe the physics more accurate.
 
 There were virtually no large avalanches observed for the three-dimensional custom model. This is possibly due to a
-too small critical slope as we have only simulated for $q_{\mathrm{crit}}=5$ in three dimensions.
-%TODO [due to limited computational resources]?
+too small critical slope as we have only simulated for $q_{\mathrm{crit}}=5$ in three dimensions due to limited
+computational resources.
 The critical slope in the BTW model is the fixed parameter of $s_{\mathrm{crit}}=2\times\operatorname{Dim}
 \left[\vec{r}\right]$ and is thus automatically increased for larger dimensions.
 Simulations in three dimensions with $q_{\mathrm{crit}}\gg 5$ are advisable to achieve improved results.
 
 The bootstrap fits for the extraction of the scaling exponents turned out to be not always reliable. Multiple calls
 of the fit routine yielded varying fit qualities and varying scaling exponents so we decided to take the best quality
-fits with the smallest errors on the scaling epxonents out of many fit runs. However, the errors are still somewhat large
-and we suggest to increase the number of simulations for each moment $\langle y^n\rangle(L)$ to a value considerably
-larger than only ten.
+fits with the smallest errors on the scaling epxonents out of many fit runs. However, the errors are still somewhat
+large and we suggest to increase the number of simulation samples for each moment $\langle y^n\rangle(L)$ to a value
+considerably larger than only ten.
 
 We obtained particularly bad fitting to the measurement points for the three-dimensional BTW model at large lattice
-sizes (see Figure~\ref{}). It is yet unclear if the scaling breaks down at large lattice sizes or if the $100000$ drives
-were just too few drives compared to the number of lattice entries $=L^3$. We suspect that this could be resolved by
-increasing the number of drives to the order of $1000000$. But care must be taken here since the simulations with less
-drives and less runs can already take several hours for each lattice size.
+sizes (see Appendix~\ref{app:btwSizeFit3D}). It is yet unclear if the scaling breaks down at large lattice sizes or
+if the \num{100000} drives were just too few drives compared to the number of lattice entries equal to $L^3$.
+We suspect that this could be resolved by increasing the number of drives to the order of \num{1000000}.
+But care must be taken here since the simulations with less drives and less runs can already take several hours
+for each lattice size.
 
 Large lattice sizes in three dimensions for the custom model could not be investigated due to limited computational
 resources.
 
+The results for the scaling exponents (see Table~\ref{tab:scalingExp}) of the BTW model can be compared to many
+different literature values from various papers~\cite{SOC-book}, which are essentially in accordance with our
+measurements for the two-dimensional case. For the three-dimensional measurements we observe slight deviations to
+smaller values compared to the literature. It is not always given an appropriate measurement uncertainty in the
+literature, though, and also values from different papers are not necessarily compatible to each other within the
+uncertainties.
 
-%TODO scaling exponents; reference p.92 \cite{SOC-book}
-Scaling BTW:
-$\rightsquigarrow$ many different values for scaling exponents in the literature, different models / model details
-$\rightsquigarrow$ essentially in accordance with our measurements
-$\rightsquigarrow$ some deviations for 3D, too few drops, see above, can be seen in moment plots
+Thus we believe that an overall good agreement to the literature is given in two as well as in three dimensions.
+Note also that we suppose that too few drives were performed for the three-dimensional lattices as pointed out before.
+
 
 Scaling Custom:
 $\rightsquigarrow$ no reference values, own development
@@ -512,33 +526,81 @@ $\rightsquigarrow$ compared to BTW $\rightsquigarrow$ tendency to smaller, less 
                    (see above)
 
 
-\section{Summary}
-\label{sec:summary}
+\section{Conclusion}
+\label{sec:conclusion}
 
-\dots%TODO summary
+In this project two different approaches of cellular automata for sandpile dynamics have been implemented and their
+dynamic properties investigated. The phenomenon of self-organized criticality and the corresponding scale invariance
+of the dynamics were observed for simulations in two and three dimensions for both models which supports the general
+concept of scale invariance in self-organized critical systems. With regard to the rather frequently studied
+Bak-Tang-Wiesenfeld model, our resulting sets of scaling exponents for avalanche \textit{size} and \textit{duration}
+mostly reside within a wide spread of many different reference values corresponding to various authors over several
+decades. Some of these references are displayed in \ref{tab:scalingExpLit}. Much less frequently, the exponents of the
+avalanche \textit{area} $\kappa,\ T$ are stated in literature which limits the references to only values for $\kappa$.
+For 3 dimensions a general deviation to smaller values is most likely due to the insufficient amount of drives for
+lattice sizes $L\ge 50$ where the number of drives was smaller than the total sites in the lattice.
+Due to the lack of errors on some of the literature values, we are not able to verify exact accordance, though,
+the deviations in two dimensions are generally within one $\sigma$. By conducting a moment analysis rather than a
+simple linear regression to the PDF of the respective observable, we were able to extract the scaling exponents while
+giving a reasonable estimation on their uncertainty as well as taking the influence of the finite size of the lattice
+on the PDF (\textit{finite-size effects}) into account. Here, we want to point out that a number greater than ten
+simulation samples per lattice size is very likely to improve the moment analysis and ten should be regarded as a lower
+limit rather than a desired value. Generally, an increase of samples, drives, lattice sizes and finally dimensions for
+both models is likely to improve to the obtained results and narrow down the uncertainties.
 
 
 \appendix*
 
-\section{Further useful figures}
+\section{}
 \label{sec:app}
 
-\subsection{Histogrammed power law scaling}
+\subsection{Simple histogrammed power law scaling}
 \label{app:naiveFit}
-\begin{figure}[!h]%TODO caption
+\begin{figure}[!h]
     \centering
     \includegraphics[width=\linewidth]{naive_fits/naive_fit2_report}
-    \caption{}
+    \caption{Naive straight line fit to the raw log-log plot of the avalanche size distribution
+             (BTW model, $100\times 100$ lattice) for obtaining the critical exponent $\tau$.}
     \label{fig:naiveFit}
 \end{figure}
 
-\subsection{\dots}
-\label{app:naiveFit}
-\begin{figure}[!h]%TODO caption
+\subsection{Moment fitting in three dimensions (BTW)}
+\label{app:btwSizeFit3D}
+\begin{figure}[!h]
     \centering
     \includegraphics[width=\linewidth]{moment_analysis_size_3d_btw_fit_report}
     \caption{Fitting of first and second avalanche size moments for a three-dimensional sandbox (BTW model).
              The second moments show noticeable deviations from the straight line fit for large lattice sizes.
              Error bars have been omitted for reasons of clarity.}
-    \label{fig:btwSizeFit}
+    \label{fig:btwSizeFit3D}
 \end{figure}
+
+\subsection{Literature values of scaling exponents}
+\label{app:scalingExpLit}
+\renewcommand{\arraystretch}{1.5}
+\sisetup{input-decimal-markers={.},output-decimal-marker={.},group-separator={},scientific-notation=fixed,
+         fixed-exponent=0,separate-uncertainty=false,table-format=4.4}
+\begin{table}[htb]
+    \centering
+    \caption{Example literature values of scaling exponents for avalanche size and duration
+             of the two- and three-dimensional BTW model, taken over from~\cite{SOC-book}.}
+    \begin{minipage}{\linewidth}
+    \begin{tabular}{lcSScSScSS}
+    \toprule
+    \multirow{2}{*}{Dim.} && \multicolumn{2}{c}{Size} && \multicolumn{2}{c}{Duration} && \multicolumn{2}{c}{Area} \\
+    \cmidrule{3-4} \cmidrule{6-7} \cmidrule{9-10}
+    && {$\tau$} & {$D$} && {$\alpha$} & {$Z$} && {$\kappa$} & \\
+    \midrule
+    \midrule
+    $\mathrm{2D}$ && 1.27(1)\,\footnotesize\cite{socbook-ref--k} & 2.73(2)\,\footnotesize\cite{socbook-ref--k} &&
+                     1.16(3)\,\footnotesize\cite{socbook-ref--n} & 1.02(5)\,\footnotesize\cite{socbook-ref--q} &&
+                     1.333\,\footnotesize\cite{socbook-ref--s} \\
+    \midrule
+    $\mathrm{3D}$ && 1.333\,\footnotesize\cite{socbook-ref--s} & 3.004\,\footnotesize\cite{socbook-ref--t} &&
+                     1.6\,\footnotesize\cite{socbook-ref--s} & 1.618\,\footnotesize\cite{socbook-ref--t} &&
+                     1.333\,\footnotesize\cite{socbook-ref--s}\\
+    \bottomrule
+    \end{tabular}
+    \end{minipage}
+    \label{tab:scalingExpLit}
+\end{table}
