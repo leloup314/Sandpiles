@@ -5,7 +5,7 @@ one of them being the Bak-Tang-Wiesenfeld model, the other an independent approa
 The scaling exponents of the three observables \textit{size, duration} and \textit{area} of avalanches are determined
 for both models. This is achieved by conducting an analysis of their moments in order to extract the scaling exponents
 as well as their uncertainties. Apart from slight deviations in the custom model, due to its different nature,
-the results are in good accordance with the literature values obtained from a composition of many distinct authors.
+the results stated in several papers by different authors could be reproduced in a satisfying manner.
 %Slight deviations from the literature occur in the custom model due to its different nature.
 %Further deviations for large lattice sizes in three dimensions are due to the limited amount of simulations,
 %time and resources.
@@ -15,20 +15,20 @@ the results are in good accordance with the literature values obtained from a co
 
 \section{Introduction}
 \label{sec:intro}
-In this paper we investigate the evolution of sandpiles into states of so-called self-organized criticality (SOC) using
-two different models for simulation. Furthermore we analyze the sandpiles' scaling behavior and scaling exponents.
+%In this paper we investigate the evolution of sandpiles into states of so-called self-organized criticality (SOC) using
+%two different models for simulation. Furthermore we analyze the sandpiles' scaling behavior and scaling exponents.
 
 Self-organized criticality describes a special case of the very general concept of criticality. Every system
 exhibiting self-organized criticality has in common the occurrence of macroscopic scale invariant properties.
 In the picture of a real sandpile this can be seen by looking at the average slope of the sandpile,
 which stays constant even if the sandpile is enlarged by adding more and more sand to it.
-It is notable that this is the case despite the dynamics of a pile of sand is actually governed by complicated
+It is notable that this is the case despite the dynamics of a pile of sand are actually governed by complicated
 microscopic\footnote{Microscopic in the sense of the size of a sand grain compared to the whole pile.} interactions
 of its many constituents, the sand grains.
 
 Such self-organized criticality has been observed before in simulations of sandpiles carried out by Bak, Tang and
 Wiesenfeld in the 1980s. It is indeed interesting to further analyze such a sandpile model
-because it can serve as a toy model for many other similar behaving systems like landslides, rock falls, earth quakes
+because it can serve as a toy model for many other similar behaving systems such as landslides, rock falls, earth quakes
 etc., which all follow from different physical processes, though.
 In the mentioned systems signs of self-organized criticality have been observed, not only from simulations but also
 from real-world data~\cite{Hergarten}.
@@ -72,7 +72,7 @@ on these parameters.}. Thus this phenomenon is called \enquote{self-organized cr
 If there is scale invariance in a system it can be directly observed in the distribution functions
 of the observables of the system as indicated above. Consider some observable $\hat{Y}$ that can be measured in the
 present system. If this observable is measured many times and histogrammed one obtains a distribution according to the
-corresponding probability density function $P^{Y}(y)$.
+corresponding probability density function (PDF) $P^{Y}(y)$.
 If now the system is scaled by a factor $\lambda$ it must hold
 \begin{equation}\label{eq:scalingCondition}
 P^{Y}(\lambda y) = f(\lambda) \times P^{Y}(y)
@@ -135,7 +135,7 @@ increasing the value of a randomly picked lattice site.
 \subsection{Implementation of sandpile cellular automata}
 \label{sec:sandpileImplementation}
 In general a cellular automaton for a sandpile in $\mathcal{N}$ real dimensions works on an $\mathcal{N}-1$ dimensional
-lattice where each lattice site stands for a stack of sand grains in the left dimension. That means for example that
+lattice where each lattice site stands for a stack of sand grains in the $\mathcal{N}$-th dimension. That means for example that
 a real sandpile, which is three dimensional, is simulated on a two dimensional lattice reflecting the ground as $x$-$y$
 plane. The entry on each site then characterizes how many grains of sand are stacked in the $z$ direction.
 We will denote these lattice entries by the variable $s(\vec{r})$ in the following, with the discrete lattice sites
@@ -157,7 +157,7 @@ alternatingly performs a \emph{driving} and a \emph{relaxation} of the lattice:
 
 \textbf{Driving} generally describes the active perturbation of the lattice. For a real sandpile the perturbation
 intuitively consists of adding a grain of sand to the pile at a random position. Since the BTW model deals with
-slopes the addition of one grain of sand could not be achieved by just increasing $s(x,y)$ about one but the neighboring
+slopes the addition of one grain of sand could not be achieved by just increasing $s(\vec{r})$ about one but the neighboring
 entries would have to be changed, too. This type of driving is called \emph{conservative driving}
 (see Figure~\ref{fig:driving:cons}).
 For the BTW model, however, we decided to use \emph{non-conservative driving} described by simply adding one slope
@@ -187,7 +187,7 @@ physical, relaxation algorithm is used.
     \label{fig:driving}
 \end{figure}
 
-\textbf{Relaxation} takes place after a driving step has performed. If the sandpile becomes too steep somewhere on the
+\textbf{Relaxation} takes place after a driving step has been performed. If the sandpile becomes too steep somewhere on the
 lattice, i.e. $s \geq s_{\mathrm{crit}}$ with the \emph{critical slope} $s_{\mathrm{crit}}$, after sand has been added
 the pile gets instable. It locally collapses and thus creates avalanches of sand sliding down the pile until the slope
 recovers to a non-critical value again. In the BTW model the critical slope is usually fixed to
@@ -228,7 +228,7 @@ stack is called critical site. The critical slope $q_{\mathrm{crit}}$ is a free 
 
 If now one site is critical with respect to at least one of its nearest neighbors the stack is considered unstable
 and about to collapse. All excess sand grains with respect to the neighbor with the least height will then be
-redistributed to all nearest neighbors to which the slope is at least critical until none of slopes to the neighbors
+redistributed to all nearest neighbors to which the slope is at least critical until none of the slopes to the neighbors
 is critical anymore. This represents one unit time step.
 Since grains have been redistributed and slopes could have changed, in the next relaxation step all nearest neighbors
 of the critical site are checked if they have become critical. Like in the BTW model this is repeated until no site
@@ -483,7 +483,7 @@ lattice than the custom model ones. As one can see in Figure~\ref{fig:customSand
 in the custom model did not completely yield the desired \enquote{diagonal hillside} but rather two split off hillsides
 towards the $x$- and $y$-axes. We believe that a further modification of the custom model, namely to allow for dropping
 grains to the diagonal nearest neighbors, would yield improved results.
-This would also describe the physics more accurate.
+This would also describe the physics more accurately.
 
 There were virtually no large avalanches observed for the three-dimensional custom model. This is possibly due to a
 too small critical slope as we have only simulated for $q_{\mathrm{crit}}=5$ in three dimensions due to limited
@@ -550,10 +550,10 @@ of the dynamics were observed for simulations in two and three dimensions for bo
 concept of scale invariance in self-organized critical systems. With regard to the rather frequently studied
 Bak-Tang-Wiesenfeld model, our resulting sets of scaling exponents for avalanche \textit{size} and \textit{duration}
 mostly reside within a wide spread of many different reference values corresponding to various authors over several
-decades. Some of these references are displayed in \ref{tab:scalingExpLit}. Much less frequently, the exponents of the
+decades. Some of these references are displayed in Table~\ref{tab:scalingExpLit}. Much less frequently, the exponents of the
 avalanche \textit{area} $\kappa,\ T$ are stated in literature which limits the references to only values for $\kappa$.
 For 3 dimensions a general deviation to smaller values is most likely due to the insufficient amount of drives for
-lattice sizes $L\ge 50$ where the number of drives was smaller than the total sites in the lattice.
+lattice sizes $L\ge 50$ where the number of drives was smaller than the total number of sites on the lattice.
 Due to the lack of errors on some of the literature values, we are not able to verify exact accordance, though,
 the deviations in two dimensions are generally within one $\sigma$. By conducting a moment analysis rather than a
 simple linear regression to the PDF of the respective observable, we were able to extract the scaling exponents while
@@ -561,61 +561,62 @@ giving a reasonable estimation on their uncertainty as well as taking the influe
 on the PDF (\textit{finite-size effects}) into account. Here, we want to point out that a number greater than ten
 simulation samples per lattice size is very likely to improve the moment analysis and ten should be regarded as a lower
 limit rather than a desired value. Generally, an increase of samples, drives, lattice sizes and finally dimensions for
-both models is likely to improve to the obtained results and narrow down the uncertainties.
+both models is likely to improve the obtained results and narrow down the uncertainties.
 
+%\newpage
 
 \appendix*
-
+%\onecolumngrid
 \section{}
 \label{sec:app}
-
-\subsection{Simple histogrammed power law scaling}
+%\begin{minipage}[t]{0.5\linewidth}
+\subsection{Simple power law scaling}
 \label{app:naiveFit}
-\begin{figure}[!h]
-    \centering
-    \includegraphics[width=\linewidth]{naive_fits/naive_fit2_report}
-    \caption{Naive straight line fit to the raw log-log plot of the avalanche size distribution
-             (BTW model, $100\times 100$ lattice) for obtaining the critical exponent $\tau$.}
-    \label{fig:naiveFit}
-\end{figure}
-
+\centering
+\includegraphics[width=\linewidth]{naive_fits/naive_fit_report}
+%	\captionsetup{width=0.75\linewidth}
+\captionof{figure}{Naive straight line fit to the raw log-log plot of the avalanche duration distribution 
+	(BTW model, $100\times 100$ lattice) for obtaining the critical exponent $\alpha$.}
+\label{fig:naiveFit}
+%\end{minipage}
+%\begin{minipage}[t]{0.5\linewidth}
 \subsection{Moment fitting in three dimensions (BTW)}
 \label{app:btwSizeFit3D}
-\begin{figure}[!h]
-    \centering
-    \includegraphics[width=\linewidth]{moment_analysis_size_3d_btw_fit_report}
-    \caption{Fitting of first and second avalanche size moments for a three-dimensional sandbox (BTW model).
-             The second moments show noticeable deviations from the straight line fit for large lattice sizes.
-             Error bars have been omitted for reasons of clarity.}
-    \label{fig:btwSizeFit3D}
-\end{figure}
+\includegraphics[width=\linewidth]{moment_analysis_size_3d_btw_fit_report}
+%	\captionsetup{width=0.75\linewidth}
+\captionof{figure}{Fitting of first and second avalanche size moments for a three-dimensional sandbox (BTW model).
+	The second moments show noticeable deviations from the straight line fit for large lattice sizes.
+	Error bars have been omitted for reasons of clarity.}
+\label{fig:btwSizeFit3D}
+%\end{minipage}
 
 \subsection{Literature values of scaling exponents}
 \label{app:scalingExpLit}
 \renewcommand{\arraystretch}{1.5}
 \sisetup{input-decimal-markers={.},output-decimal-marker={.},group-separator={},scientific-notation=fixed,
-         fixed-exponent=0,separate-uncertainty=false,table-format=4.4}
+	fixed-exponent=0,separate-uncertainty=false,table-format=4.4}
 \begin{table}[htb]
-    \centering
-    \caption{Example literature values of scaling exponents for avalanche size and duration
-             of the two- and three-dimensional BTW model, taken over from~\cite{SOC-book}.}
-    \begin{minipage}{\linewidth}
-    \begin{tabular}{lcSScSScSS}
-    \toprule
-    \multirow{2}{*}{Dim.} && \multicolumn{2}{c}{Size} && \multicolumn{2}{c}{Duration} && \multicolumn{2}{c}{Area} \\
-    \cmidrule{3-4} \cmidrule{6-7} \cmidrule{9-10}
-    && {$\tau$} & {$D$} && {$\alpha$} & {$Z$} && {$\kappa$} & \\
-    \midrule
-    \midrule
-    $\mathrm{2D}$ && 1.27(1)\,\footnotesize\cite{socbook-ref--k} & 2.73(2)\,\footnotesize\cite{socbook-ref--k} &&
-                     1.16(3)\,\footnotesize\cite{socbook-ref--n} & 1.02(5)\,\footnotesize\cite{socbook-ref--q} &&
-                     1.333\,\footnotesize\cite{socbook-ref--s} \\
-    \midrule
-    $\mathrm{3D}$ && 1.333\,\footnotesize\cite{socbook-ref--s} & 3.004\,\footnotesize\cite{socbook-ref--t} &&
-                     1.6\,\footnotesize\cite{socbook-ref--s} & 1.618\,\footnotesize\cite{socbook-ref--t} &&
-                     1.333\,\footnotesize\cite{socbook-ref--s}\\
-    \bottomrule
-    \end{tabular}
-    \end{minipage}
-    \label{tab:scalingExpLit}
+	\centering
+%	\captionsetup{width=0.525\linewidth}
+	\caption{Example literature values of scaling exponents for avalanche size and duration
+		of the two- and three-dimensional BTW model, taken over from~\cite{SOC-book}.}
+	\begin{tabular}{lcSScSScSS}
+		\toprule
+		\multirow{2}{*}{Dim.} && \multicolumn{2}{c}{Size} && \multicolumn{2}{c}{Duration} && \multicolumn{2}{c}{Area} \\
+		\cmidrule{3-4} \cmidrule{6-7} \cmidrule{9-10}
+		&& {$\tau$} & {$D$} && {$\alpha$} & {$Z$} && {$\kappa$} & \\
+		\midrule
+		\midrule
+		$\mathrm{2D}$ && 1.27(1)\,\footnotesize\cite{socbook-ref--k} & 2.73(2)\,\footnotesize\cite{socbook-ref--k} &&
+		1.16(3)\,\footnotesize\cite{socbook-ref--n} & 1.02(5)\,\footnotesize\cite{socbook-ref--q} &&
+		1.333\,\footnotesize\cite{socbook-ref--s} \\
+		\midrule
+		$\mathrm{3D}$ && 1.333\,\footnotesize\cite{socbook-ref--s} & 3.004\,\footnotesize\cite{socbook-ref--t} &&
+		1.6\,\footnotesize\cite{socbook-ref--s} & 1.618\,\footnotesize\cite{socbook-ref--t} &&
+		1.333\,\footnotesize\cite{socbook-ref--s}\\
+		\bottomrule
+	\end{tabular}
+	\label{tab:scalingExpLit}
 \end{table}
+%\vspace{-0.33cm}
+%\twocolumngrid
