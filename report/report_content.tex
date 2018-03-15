@@ -271,7 +271,7 @@ according to Equation~\eqref{eq:finiteSizeScaling}:
 \begin{description}
 \item[Size] critical exponent $\tau$, avalanche dimension $D$.
 \item[Duration] critical exponent $\alpha$, dynamical exponent $Z$.
-\item[Area] critical exponent $\kappa$, area dimension $T$.
+\item[Area] critical exponent $\kappa$, avalanche area dimension $T$.
 \end{description}
 
 As pointed out in Section~\ref{sec:th:scaling} the exponents can be determined from the corresponding measured
@@ -512,18 +512,33 @@ The results for the scaling exponents (see Table~\ref{tab:scalingExp}) of the BT
 different literature values from various papers~\cite{SOC-book}, which are essentially in accordance with our
 measurements for the two-dimensional case. For the three-dimensional measurements we observe slight deviations to
 smaller values compared to the literature. It is not always given an appropriate measurement uncertainty in the
-literature, though, and also values from different papers are not necessarily compatible to each other within the
-uncertainties.
+literature, though, and also values from different papers are not necessarily compatible to each other
+within the uncertainties. Thus we believe that an overall good agreement to the literature is given in two as well as
+in three dimensions. Note also that we suppose that too few drives were performed for the three-dimensional
+lattices as pointed out before.
 
-Thus we believe that an overall good agreement to the literature is given in two as well as in three dimensions.
-Note also that we suppose that too few drives were performed for the three-dimensional lattices as pointed out before.
+The scaling exponents of the custom model are compared to our results of the BTW model to investigate if the different
+approaches of scalar slopes vs. heights yield a similar scaling behavior, which we would expect because both models
+are supposed to simulate the same system. We still don't necessarily expect exactly matching values due to the
+non-isotropic relaxation in the BTW model whereas in the custom model the sand grains are redistributed in a more
+isotropic way.
 
+From Table~\ref{tab:scalingExp} one finds the tendency to smaller $K$. Most notably the value for the avalanche area
+dimension is about \num{2} in the BTW model and about \num{1} in the custom model. This corresponds to the other,
+visual observations of narrow, less spreading avalanches of the custom model.
+The avalanche area dimension indeed seems to reflect the dimensionality of the avalanches.
+We suggest again to try out incorporating of dropping to the diagonal nearest neighbors to see if it impacts these
+observations.
 
-Scaling Custom:
-$\rightsquigarrow$ no reference values, own development
-$\rightsquigarrow$ compared to BTW $\rightsquigarrow$ tendency to smaller, less spreading avalanches corresponds to
-                   larger $\rho$s and smaller $K$s \checkmark $\rightsquigarrow$ suggest (again) diagonal dropping
-                   (see above)
+The values for $\rho$ tend to be a bit larger, which would mean a slight suppression of large avalanches compared to
+the BTW model, but they are actually compatible with the BTW values within the uncertainties. To resolve this the
+uncertainties have to be narrowed down by increasing the number of drives and simulation samples as described above.
+
+All scaling exponents are independent of the chosen critical slope within uncertainties. This should be checked again
+with improved resolution, too, as well as it should be checked with a broader range of critical slopes.
+In three dimensions we have only simulations for lattice sizes of $L=10,20,30,40$ available due to limited computational
+resources. Also the bootstrapped fitting could not be reliably applied such that the values of the three-dimensional
+custom model exponents cannot really be considered reliable.
 
 
 \section{Conclusion}
