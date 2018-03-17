@@ -235,7 +235,7 @@ def do_relaxation(s, x_array, critical_slope, open_bounds, neighbour_LUD, result
             N = len(crit_neighbours)
             max_to_drop = current_max_slope
 
-            offset = 0#np.random.randint(N)   # Randomly select initial drop neighbour
+            offset = np.random.randint(N)   # Randomly select initial drop neighbour
             for i in range(max_to_drop):
                 tIdx = (i+offset) % N
                 drop_site = tuple(crit_neighbours[tIdx])
@@ -587,8 +587,8 @@ def main(length=None, dimension=None, critical_slope=None, total_drives=None, si
     _SAND_DROPS = 10000 if total_drives is None else total_drives
     
     # Site to drop to in sandbox; if None, drop randomly
-    _SITE = site
-    
+    _SITE = site if site == None else np.array(site)
+
     # Whether to plot results
     _PLOT_RES = plot_res
     
