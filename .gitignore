@@ -6,6 +6,7 @@
 *.pyc
 # Numpy
 *.npy
+!example/**/*.npy
 # LaTeX
 report/*
 !report/*.tex
