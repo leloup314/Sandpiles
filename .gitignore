@@ -7,14 +7,12 @@
 # Numpy
 *.npy
 !example/**/*.npy
-# LaTeX
+# LaTeX: Upload only PDF files of report and presentation
 report/*
-!report/*.tex
-!report/refs.bib
-!report/gfx
-!report/plots
+!report/*.pdf
 presentation/*
-!presentation/*.tex
-!presentation/pics/*
+!presentation/*.pdf
 # Notebook
 analysis/moment_analysis/.ipynb_checkpoints/*
+# Local simulation files
+simulations/*
